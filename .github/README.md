@@ -1,4 +1,4 @@
-# browser-extensions-template-esbuild
+# browser-extensions-humoruniv
 
 ![TypeScript Badge](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff&style=flat-square)
 ![JavaScript Badge](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=000&style=flat-square)
@@ -11,9 +11,8 @@
 ![Google Chrome Badge](https://img.shields.io/badge/Google%20Chrome-4285F4?logo=googlechrome&logoColor=fff&style=flat-square)
 (![Firefox Browser Badge](https://img.shields.io/badge/Firefox%20Browser-FF7139?logo=firefoxbrowser&logoColor=fff&style=flat-square))
 
-React + esbuild
-크롬 (추후 파이어폭스 지원 예정) 확장 프로그램을 위한
-리액트 및 npm 패키지 사용을 위한 세팅이 되어 있는 템플릿입니다.
+웃긴대학 사이트를 위한
+크롬 (추후 파이어폭스 지원 예정) 확장 프로그램
 
 ## Build
 
@@ -24,3 +23,4 @@ yarn build
 ## Scripts
 
 모든 스크립트는 `public/dist`에 저장됩니다.
+크롬 확장 프로그램 페이지(`chrome://extensions/`)에서 개발자 모드를 켜고 `public` 폴더를 드래그 드랍하면 테스트할 수 있습니다.
