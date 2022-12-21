@@ -1,0 +1,10 @@
+/node_modules
+/.vscode
+.eslintcache
+*.env
+*.local
+*.log
+
+folder.json
+
+**/test.*

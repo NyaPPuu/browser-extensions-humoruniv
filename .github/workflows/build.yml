@@ -1,0 +1,22 @@
+name: Build Extension
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build Extension
+    runs-on: ubuntu-latest
+  
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      
+      - name: Install yarn
+        run: npm i -g yarn
+        
+      - name: Install dependencies
+        run: yarn
+
+      - name: Build extension scripts
+        run: yarn build
