@@ -110,7 +110,6 @@ const makeStamp = (toolSize: number, colorString: string) => {
 		console.error("스탬프 생성 중 오류가 발생했습니다.");
 		throw new Error("스탬프 생성 중 오류가 발생했습니다.");
 	}
-	console.log(toolSize, size, context);
 
 	const imageData = context.createImageData(size, size);
 	for (let i = 0; i < imageData.data.length; i += 4) {
@@ -122,7 +121,6 @@ const makeStamp = (toolSize: number, colorString: string) => {
 	plotCircle(size * 2, (size * 4) * (size / 2), size / 2, imageData, size, color);
 	fillCircle(imageData, color);
 	context.putImageData(imageData, 0, 0);
-	console.log("makeStamp canvas", canvas);
 	return canvas;
 };
 
@@ -139,12 +137,16 @@ const TooltipToggleButton: VFC<TooltipToggleButtonProps> = React.forwardRef(
 		);
 	}
 );
-const ColorPicker = React.memo(function ColorPicker({ ...props }: InputProps) {
+const ColorPicker = React.memo(function ColorPicker({ value, ...props }: InputProps & { value?: string; }) {
 	const [color, setColor] = React.useState<string>("#000000");
 
 	const handleChangeColor = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setColor(event.target.value);
 	};
+
+	React.useEffect(() => {
+		if (value) setColor(value);
+	}, [value]);
 
 	return (
 		<Input disableUnderline {...props} type="color" value={color} onChange={handleChangeColor} />
@@ -153,30 +155,39 @@ const ColorPicker = React.memo(function ColorPicker({ ...props }: InputProps) {
 
 type ToolSize = { [key: string]: number; }
 type Tool = { id: string; color: string; size: ToolSize; }
+type PreviousTool = { id: string | null; position?: Position; imageData?: ImageData
+; }
 type History = { undo: string[]; redo: string[]; };
 type Position = { x: number; y: number; }
 
 export default function Drawing() {
 
 	const stamp = React.useRef<{ [key: string]: HTMLCanvasElement; }>({});
-	const previousTool = React.useRef<string | null>(null);
+	const previousTool = React.useRef<PreviousTool>({
+		id: null
+	});
 	const pointer = React.useRef<{
 		lastX: null | number;
 		lastY: null | number;
 		isDown: boolean;
 		isEnter: boolean;
+		pageX: null | number;
+		pageY: null | number;
 	}>({
 		lastX: null,
 		lastY: null,
 		isDown: false,
 		isEnter: false,
+		pageX: null,
+		pageY: null,
 	});
 	const [tool, setTool] = React.useState<Tool>({
 		id: "pencil",
-		color: "black",
+		color: "#000000",
 		size: {
 			"pencil": 2,
 			"eraser": 5,
+			"line": 1,
 		}
 	});
 	const [history, setHistory] = React.useState<History>({
@@ -186,9 +197,10 @@ export default function Drawing() {
 	const [position, setPosition] = React.useState<{ [id: string]: Position; }>({});
 	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const canvasContextRef = React.useRef<CanvasRenderingContext2D | null>(null);
+	const toolBoxRef = React.useRef<HTMLDivElement>(null);
 
 	const handleDragEnd = (event: DragEndEvent) => {
-		DEV.log("handleDragEnd", event);
+		// DEV.log("handleDragEnd", event);
 		setPosition((data) => {
 			return {
 				...position,
@@ -220,22 +232,31 @@ export default function Drawing() {
 	const handlePointerDown = (ReactEvent: React.MouseEvent | React.TouchEvent) => {
 		const event = ReactEvent.nativeEvent;
 		pointer.current.isDown = true;
+		const eventPosition = ("targetTouches" in event ? event.targetTouches[0] : event);
+		pointer.current.pageX = eventPosition.pageX;
+		pointer.current.pageY = eventPosition.pageY;
 		const { x, y } = getEventPosition(event);
 		DEV.log("handlePointerDown", x, y, ReactEvent);
 		if ("button" in event && event.button == 2) {
-			previousTool.current = tool.id;
+			previousTool.current.id = tool.id;
 			setTool({ ...tool, id: "eraser" });
 			doAction("eraser", x, y, event.type);
 		} else doAction(tool.id, x, y, event.type);
 	};
 	const handlePointerUp = (event: MouseEvent | TouchEvent) => {
 		pointer.current.isDown = false;
-		if (previousTool.current) {
-			setTool({ ...tool, id: previousTool.current });
-			previousTool.current = null;
+		const eventPosition = ("targetTouches" in event ? event.targetTouches[0] : event);
+		pointer.current.pageX = eventPosition.pageX;
+		pointer.current.pageY = eventPosition.pageY;
+		if (previousTool.current.id) {
+			setTool({ ...tool, id: previousTool.current.id });
+			previousTool.current.id = null;
 		}
 	};
 	const handlePointerMove = (event: MouseEvent | TouchEvent) => {
+		const eventPosition = ("targetTouches" in event ? event.targetTouches[0] : event);
+		pointer.current.pageX = eventPosition.pageX;
+		pointer.current.pageY = eventPosition.pageY;
 		const { x, y } = getEventPosition(event);
 		if (pointer.current.isDown) {
 			doAction(tool.id, x, y, event.type);
@@ -243,23 +264,60 @@ export default function Drawing() {
 		pointer.current.lastX = x;
 		pointer.current.lastY = y;
 	};
-
 	const handleContextmenu = (event: React.MouseEvent<HTMLDivElement>) => {
 		event.stopPropagation();
 		event.preventDefault();
 		return false;
 	};
+	const handleKeydown = (event: KeyboardEvent) => {
+		DEV.log("handleKeydown", event);
+		if (event.code == "Equal") { // +
+			setTool({ ...tool, size: { ...tool.size, [tool.id]: (tool.size[tool.id] || 1) + 1 } });
+		} else if (event.code == "Minus") { // -
+			if (tool.size[tool.id] > 1) setTool({ ...tool, size: { ...tool.size, [tool.id]: tool.size[tool.id] - 1 } });
+		} else if (event.code == "KeyT") { // t
+			if (pointer.current.pageX != null && pointer.current.pageY != null) {
+				setPosition({
+					toolBox: { x: pointer.current.pageX - (toolBoxRef.current?.offsetWidth ? toolBoxRef.current?.offsetWidth / 2 : 0), y: pointer.current.pageY - (toolBoxRef.current?.offsetHeight ? toolBoxRef.current?.offsetHeight / 2 : 0) }
+				});
+			}
+		} else if (event.code == "KeyZ" && event.ctrlKey) { // Ctrl Z
+			loadHistory("undo");
+		} else if (event.code == "KeyY" && event.ctrlKey) { // Ctrl Y
+			loadHistory("redo");
+		}
+	};
 
-	const getStamp = (toolID: string, colorHEX: string) => {
-		const stampID = tool.size[toolID]+"_"+colorHEX;
-		console.log("stamp", stampID);
-		if (!stamp.current[stampID]) stamp.current[stampID] = makeStamp(tool.size[toolID], colorHEX);
+	const getStamp = (size: number, colorHEX: string) => {
+		const stampID = size+"_"+colorHEX;
+		// console.log("stamp", stampID);
+		if (!stamp.current[stampID]) stamp.current[stampID] = makeStamp(size, colorHEX);
 		return stamp.current[stampID];
+	};
+	const brush = (stamp: HTMLCanvasElement, xPosition: number, yPosition: number, size: number, lastX?: number, lastY?: number) => {
+		if (!canvasContextRef.current) return;
+		const halfSize = (size - (size % 2)) / 2;
+		if ((!lastX || !lastY) || xPosition === lastX && yPosition === lastY) {
+			const x = xPosition - halfSize;
+			const y = yPosition - halfSize;
+			canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
+			return;
+		}
+		const dist = distanceBetween(xPosition, yPosition, lastX, lastY);
+		const angle = angleBetween(xPosition, yPosition, lastX, lastY);
+		const path = [];
+		for (let i = 0; i < dist; i += 1) {
+			const x = xPosition + (Math.sin(angle) * i) - halfSize;
+			const y = yPosition + (Math.cos(angle) * i) - halfSize;
+			path.push([Math.round(x), Math.round(y)]);
+			canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
+		}
+		console.log(path);
 	};
 
 	const doAction = (toolID: string, xPosition: number, yPosition: number, eventType?: string) => {
 		if (!canvasRef.current || !canvasContextRef.current) return;
-		DEV.log("doAction", tool, xPosition, yPosition, eventType);
+		// DEV.log("doAction", tool, xPosition, yPosition, eventType);
 
 		if (toolID == "pencil" || toolID == "eraser") {
 			if (eventType == "pointerdown") saveHistory();
@@ -270,31 +328,14 @@ export default function Drawing() {
 			pointer.current.lastY = yPosition;
 
 			const size = tool.size[toolID] || 1;
-			const halfSize = (size - (size % 2)) / 2;
-			const stamp = getStamp(toolID, toolID == "eraser" ? "#FFFFFF" : Color(tool.color).hex());
-			if ((!lastX || !lastY) || xPosition === lastX && yPosition === lastY) {
-				const x = xPosition - halfSize;
-				const y = yPosition - halfSize;
-				canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
-				return;
-			}
-			const dist = distanceBetween(xPosition, yPosition, lastX, lastY);
-			const angle = angleBetween(xPosition, yPosition, lastX, lastY);
-			for (let i = 0; i < dist; i += 1) {
-				const x = xPosition + (Math.sin(angle) * i) - halfSize;
-				const y = yPosition + (Math.cos(angle) * i) - halfSize;
-				canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
-			}
+			const stamp = getStamp(size, toolID == "eraser" ? "#FFFFFF" : Color(tool.color).hex());
+			brush(stamp, xPosition, yPosition, size, lastX, lastY);
 		} else if (toolID == "paint") {
-			console.log("paint!");
 			if (eventType != "pointerdown" && eventType != "pointermove") return;
-			console.log("eventType pass");
 			const imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
 			const toolColor = Color(tool.color).rgb().array();
 			const startColor = getPixelColorFromImageData(imageData, xPosition, yPosition, canvasRef.current.width);
-			console.log(imageData, xPosition, yPosition, startColor, toolColor);
 			if (isSameColor(startColor, toolColor)) return;
-			console.log("sameColor pass");
 			const queue = [[xPosition, yPosition]];
 			while (queue.length) {
 				const pos = queue.pop();
@@ -335,6 +376,24 @@ export default function Drawing() {
 			saveHistory();
 			// Draw the current state of the color layer to the canvas
 			canvasContextRef.current.putImageData(imageData, 0, 0);
+		} else if (toolID == "dropper") {
+			if (eventType != "pointerdown" && eventType != "pointermove") return;
+			const imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+			const getColor = getPixelColorFromImageData(imageData, xPosition, yPosition, canvasRef.current.width);
+			setTool({ ...tool, color: Color(getColor).hex() });
+		} else if (toolID == "line") {
+			// if (eventType != "pointerdown" && eventType != "pointermove") return;
+			if (eventType == "pointerdown") {
+				saveHistory();
+				previousTool.current.id = "line";
+				previousTool.current.position = { x: xPosition, y: yPosition };
+				previousTool.current.imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+			} else if (eventType == "pointermove" && previousTool.current.id == "line" && previousTool.current.position && previousTool.current.imageData) {
+				canvasContextRef.current.putImageData(previousTool.current.imageData, 0, 0);
+				const size = tool.size[toolID] || 1;
+				const stamp = getStamp(size, Color(tool.color).hex());
+				brush(stamp, xPosition, yPosition, size, previousTool.current.position.x, previousTool.current.position.y);
+			}
 		}
 	};
 	const resetHistory = () => {
@@ -351,6 +410,7 @@ export default function Drawing() {
 		});
 	};
 	const loadHistory = (type: "redo" | "undo" = "undo") => {
+		// DEV.log("loadHistory", type, canvasRef.current, canvasContextRef.current, history);
 		if (!canvasRef.current || !canvasContextRef.current) return;
 		const otherType = type == "undo" ? "redo" : "undo";
 		const currentHistory = { ...history };
@@ -359,6 +419,9 @@ export default function Drawing() {
 		const image = new Image();
 		image.src = nowData;
 		currentHistory[otherType].push(canvasRef.current.toDataURL());
+		previousTool.current.id = null;
+		previousTool.current.position = undefined;
+		previousTool.current.imageData = undefined;
 		setHistory({
 			...currentHistory
 		});
@@ -381,21 +444,22 @@ export default function Drawing() {
 	React.useEffect(() => {
 		window.addEventListener("pointerup", handlePointerUp);
 		window.addEventListener("pointermove", handlePointerMove);
+		window.addEventListener("keydown", handleKeydown);
 		// canvasRef.current?.addEventListener("pointerenter", handlePointerEnter);
 		// canvasRef.current?.addEventListener("pointerleave", handlePointerLeave);
 
 		return () => {
 			window.removeEventListener("pointerup", handlePointerUp);
 			window.removeEventListener("pointermove", handlePointerMove);
+			window.removeEventListener("keydown", handleKeydown);
 			// canvasRef.current?.removeEventListener("pointerenter", handlePointerEnter);
 			// canvasRef.current?.removeEventListener("pointerleave", handlePointerLeave);
 		};
-	}, [tool.id, tool.size, tool.color]);
+	}, [tool.id, tool.size, tool.color, history]);
 
 	return (
 		<DndContext onDragEnd={handleDragEnd}>
 			<Box onContextMenu={handleContextmenu}>
-				<TextField value={JSON.stringify(tool)} />
 				<div
 					style={{
 						position: "relative",
@@ -409,28 +473,16 @@ export default function Drawing() {
 						height={257}
 						onPointerDown={handlePointerDown}
 					></canvas>
-					{/* <div
-						style={{
-							position: "absolute",
-							top: 0,
-							left: 0,
-							width: "100%",
-							height: "100%",
-						}}
-						onPointerDown={handlePointerDown}
-						// onPointerEnter={handlePointerEnter}
-						// onPointerLeave={handlePointerLeave}
-					></div> */}
 				</div>
-				<DrawingToolBox canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} />
+				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} />
 			</Box>
 		</DndContext>
 	);
 }
 
-const DrawingToolBox = React.memo(function DrawingToolBox({ canvasRef, canvasContextRef, position, tool, setTool, history, loadHistory, resetHistory }: { canvasRef: React.RefObject<HTMLCanvasElement>, canvasContextRef: React.MutableRefObject<CanvasRenderingContext2D | null>, position: Position, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, history: History, loadHistory: (type: "redo" | "undo") => void, resetHistory: () => void }) {
+const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, canvasContextRef, position, tool, setTool, history, loadHistory, resetHistory }: { canvasRef: React.RefObject<HTMLCanvasElement>, canvasContextRef: React.MutableRefObject<CanvasRenderingContext2D | null>, position: Position, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, history: History, loadHistory: (type: "redo" | "undo") => void, resetHistory: () => void }, ref: React.ForwardedRef<HTMLDivElement>) {
 
-	const { attributes: toolBoxDragAttributes, listeners: toolBoxDragListeners, setNodeRef: toolBoxDragSetNodeRef, transform: toolBoxDragTransform, isDragging: toolBoxIsDragging } = useDraggable({
+	const { attributes: toolBoxDragAttributes, listeners: toolBoxDragListeners, transform: toolBoxDragTransform, isDragging: toolBoxIsDragging } = useDraggable({
 		id: "toolBox"
 	});
 
@@ -506,13 +558,14 @@ const DrawingToolBox = React.memo(function DrawingToolBox({ canvasRef, canvasCon
 
 	return (
 		<>
-			<Paper ref={toolBoxDragSetNodeRef} style={{ transform: CSS.Translate.toString(toolBoxDragTransform) }} elevation={3} sx={{ position: "absolute", top: position?.y || 0, left: position?.x || 0, display: "flex", border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: 0, width: 40, height: 40, p: 1.2 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
+			<Paper ref={ref} style={{ top: position?.y || 0, left: position?.x || 0, transform: CSS.Translate.toString(toolBoxDragTransform) }} elevation={3} sx={{ position: "absolute", display: "flex", border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: 0, width: 40, height: 40, p: 1.2 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
 				<Box alignSelf="center" {...toolBoxDragAttributes} {...toolBoxDragListeners} sx={{ cursor: toolBoxIsDragging ? "grabbing" : "grab" }}><DragHandleIcon /></Box>
 				<ButtonGroup orientation="vertical" sx={{ border: 0 }}>
 					<Tooltip title="새로 만들기" placement="right">
 						<span>
 							<Button onClick={handleClickNew}>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M8.586 17H3v-2h18v2h-5.586l3.243 3.243-1.414 1.414L13 17.414V20h-2v-2.586l-4.243 4.243-1.414-1.414L8.586 17zM5 3h14a1 1 0 0 1 1 1v10H4V4a1 1 0 0 1 1-1zm1 2v7h12V5H6z"/></svg>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M9 2.003V2h10.998C20.55 2 21 2.455 21 2.992v18.016a.993.993 0 0 1-.993.992H3.993A1 1 0 0 1 3 20.993V8l6-5.997zM5.83 8H9V4.83L5.83 8zM11 4v5a1 1 0 0 1-1 1H5v10h14V4h-8z"/></svg>
+								{/* <FontAwesomeIcon icon="fa-regular fa-file" /> */}
 							</Button>
 						</span>
 					</Tooltip>
@@ -520,6 +573,7 @@ const DrawingToolBox = React.memo(function DrawingToolBox({ canvasRef, canvasCon
 						<span>
 							<Button onClick={handleClickResize}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M15 17v2H6a1 1 0 0 1-1-1V7H2V5h3V2h2v15h8zm2 5V7H9V5h9a1 1 0 0 1 1 1v11h3v2h-3v3h-2z"/></svg>
+								{/* <FontAwesomeIcon icon="fa-solid fa-crop-simple" /> */}
 							</Button>
 						</span>
 					</Tooltip>
@@ -556,10 +610,16 @@ const DrawingToolBox = React.memo(function DrawingToolBox({ canvasRef, canvasCon
 					<TooltipToggleButton value="paint" TooltipProps={{ title: "페인트 통", "placement": "right" }}>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M19.228 18.732l1.768-1.768 1.767 1.768a2.5 2.5 0 1 1-3.535 0zM8.878 1.08l11.314 11.313a1 1 0 0 1 0 1.415l-8.485 8.485a1 1 0 0 1-1.414 0l-8.485-8.485a1 1 0 0 1 0-1.415l7.778-7.778-2.122-2.121L8.88 1.08zM11 6.03L3.929 13.1 11 20.173l7.071-7.071L11 6.029z"/></svg>
 					</TooltipToggleButton>
+					<TooltipToggleButton value="dropper" TooltipProps={{ title: "스포이드", "placement": "right" }}>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M6.457 18.957l8.564-8.564-1.414-1.414-8.564 8.564 1.414 1.414zm5.735-11.392l-1.414-1.414 1.414-1.414 1.768 1.767 2.829-2.828a1 1 0 0 1 1.414 0l2.121 2.121a1 1 0 0 1 0 1.414l-2.828 2.829 1.767 1.768-1.414 1.414-1.414-1.414L7.243 21H3v-4.243l9.192-9.192z"/></svg>
+					</TooltipToggleButton>
+					<TooltipToggleButton value="line" TooltipProps={{ title: "선 그리기", "placement": "right" }}>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 8v12h4V8H5zM3 7l4-5 4 5v15H3V7zm16 9v-2h-3v-2h3v-2h-2V8h2V6h-4v14h4v-2h-2v-2h2zM14 4h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>
+					</TooltipToggleButton>
 				</ToggleButtonGroup>
 				<Divider />
 				<ColorPicker inputProps={{ sx: { p: 0, height: 40 } }} onBlur={handleChangeColor} value={tool.color} />
-				{(tool.id == "pencil" || tool.id == "eraser") &&
+				{(tool.id == "pencil" || tool.id == "eraser" || tool.id == "line") &&
 					<React.Fragment>
 						<Slider
 							sx={{
@@ -640,3 +700,5 @@ const DrawingToolBox = React.memo(function DrawingToolBox({ canvasRef, canvasCon
 		</>
 	);
 });
+
+const DrawingToolBox = React.memo(DrawingToolBox_);
