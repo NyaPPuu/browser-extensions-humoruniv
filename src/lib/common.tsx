@@ -43,6 +43,11 @@ class DevHelper {
 		console.log(...this.prefix(), ...args);
 	}
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	warn(...args: any) {
+		if (!this.enable) return;
+		console.warn(...this.prefix(), ...args);
+	}
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	error(...args: any) {
 		if (!this.enable) return;
 		console.error(...this.prefix(), ...args);

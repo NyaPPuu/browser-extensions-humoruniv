@@ -77653,6 +77653,11 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         return;
       console.log(...this.prefix(), ...args);
     }
+    warn(...args) {
+      if (!this.enable)
+        return;
+      console.warn(...this.prefix(), ...args);
+    }
     error(...args) {
       if (!this.enable)
         return;
