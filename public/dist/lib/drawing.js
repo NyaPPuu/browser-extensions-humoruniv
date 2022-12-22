@@ -84131,11 +84131,39 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
 
   // src/lib/drawing.tsx
   var import_DragHandle = __toESM(require_DragHandle());
-  function distanceBetween(x1, y1, x2, y2) {
-    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-  }
-  function angleBetween(x1, y1, x2, y2) {
-    return Math.atan2(x2 - x1, y2 - y1);
+  function drawLine(x1, y1, x2, y2, drawFunction) {
+    let tmp;
+    const steep = Math.abs(y2 - y1) > Math.abs(x2 - x1);
+    if (steep) {
+      tmp = x1;
+      x1 = y1;
+      y1 = tmp;
+      tmp = x2;
+      x2 = y2;
+      y2 = tmp;
+    }
+    let sign = 1;
+    if (x1 > x2) {
+      sign = -1;
+      x1 *= -1;
+      x2 *= -1;
+    }
+    const dx = x2 - x1;
+    const dy = Math.abs(y2 - y1);
+    let err = dx / 2;
+    const yStep = y1 < y2 ? 1 : -1;
+    let y = y1;
+    for (let x = x1; x <= x2; x++) {
+      if (steep)
+        drawFunction(y, sign * x);
+      else
+        drawFunction(sign * x, y);
+      err = err - dy;
+      if (err < 0) {
+        y += yStep;
+        err += dx;
+      }
+    }
   }
   function plotCircle(xm, ym, r, imageData, size, color) {
     let x = -r;
@@ -84357,7 +84385,9 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
     };
     const handleKeydown = (event) => {
       var _a, _b, _c, _d;
-      DEV.log("handleKeydown", event);
+      DEV.log("handleKeydown", event, document.querySelectorAll(":focus").length);
+      if (document.querySelectorAll(":focus").length)
+        return;
       if (event.code == "Equal") {
         setTool({ ...tool, size: { ...tool.size, [tool.id]: (tool.size[tool.id] || 1) + 1 } });
       } else if (event.code == "Minus") {
@@ -84391,16 +84421,9 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         canvasContextRef.current.drawImage(stamp2, Math.round(x), Math.round(y), size, size);
         return;
       }
-      const dist = distanceBetween(xPosition, yPosition, lastX, lastY);
-      const angle = angleBetween(xPosition, yPosition, lastX, lastY);
-      const path = [];
-      for (let i = 0; i < dist; i += 1) {
-        const x = xPosition + Math.sin(angle) * i - halfSize;
-        const y = yPosition + Math.cos(angle) * i - halfSize;
-        path.push([Math.round(x), Math.round(y)]);
+      drawLine(xPosition, yPosition, lastX, lastY, (x, y) => {
         canvasContextRef.current.drawImage(stamp2, Math.round(x), Math.round(y), size, size);
-      }
-      console.log(path);
+      });
     };
     const doAction = (toolID, xPosition, yPosition, eventType) => {
       if (!canvasRef.current || !canvasContextRef.current)

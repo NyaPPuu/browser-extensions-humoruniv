@@ -14,6 +14,40 @@ function distanceBetween(x1: number, y1: number, x2: number, y2: number) {
 function angleBetween(x1: number, y1: number, x2: number, y2: number) {
 	return Math.atan2(x2 - x1, y2 - y1);
 }
+function drawLine(x1: number, y1: number, x2: number, y2: number, drawFunction: (x: number, y: number) => void) {
+	let tmp;
+	const steep = Math.abs(y2-y1) > Math.abs(x2-x1);
+	if(steep) {
+		// swap x1,y1
+		tmp=x1; x1=y1; y1=tmp;
+
+		// swap x2,y2
+		tmp=x2; x2=y2; y2=tmp;
+	}
+
+	let sign = 1;
+	if(x1>x2) {
+		sign = -1;
+		x1 *= -1;
+		x2 *= -1;
+	}
+	const dx = x2-x1;
+	const dy = Math.abs(y2-y1);
+	let err = ((dx/2));
+	const yStep = y1 < y2 ? 1:-1;
+	let y = y1;
+
+	for(let x=x1;x<=x2;x++) {
+		if (steep) drawFunction(y, sign * x);
+		else drawFunction(sign * x, y);
+
+		err = (err - dy);
+		if(err < 0) {
+			y+=yStep;
+			err+=dx;
+		}
+	}
+}
 function plotCircle(xm: number, ym: number, r: number, imageData: ImageData, size: number, color: { [key: string]: number; }) {
 	let x = -r;
 	let y = 0;
@@ -270,7 +304,8 @@ export default function Drawing() {
 		return false;
 	};
 	const handleKeydown = (event: KeyboardEvent) => {
-		DEV.log("handleKeydown", event);
+		DEV.log("handleKeydown", event, document.querySelectorAll(":focus").length);
+		if (document.querySelectorAll(":focus").length) return;
 		if (event.code == "Equal") { // +
 			setTool({ ...tool, size: { ...tool.size, [tool.id]: (tool.size[tool.id] || 1) + 1 } });
 		} else if (event.code == "Minus") { // -
@@ -303,6 +338,11 @@ export default function Drawing() {
 			canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
 			return;
 		}
+		drawLine(xPosition, yPosition, lastX, lastY, (x, y) => {
+			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+			canvasContextRef.current!.drawImage(stamp, Math.round(x), Math.round(y), size, size);
+		});
+		/*
 		const dist = distanceBetween(xPosition, yPosition, lastX, lastY);
 		const angle = angleBetween(xPosition, yPosition, lastX, lastY);
 		const path = [];
@@ -313,6 +353,7 @@ export default function Drawing() {
 			canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
 		}
 		console.log(path);
+		*/
 	};
 
 	const doAction = (toolID: string, xPosition: number, yPosition: number, eventType?: string) => {
