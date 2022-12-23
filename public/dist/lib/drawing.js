@@ -84415,14 +84415,14 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       if (!canvasContextRef.current)
         return;
       const halfSize = (size - size % 2) / 2;
-      if (!lastX || !lastY || xPosition === lastX && yPosition === lastY) {
+      if (typeof lastX === "undefined" || typeof lastY === "undefined" || xPosition === lastX && yPosition === lastY) {
         const x = xPosition - halfSize;
         const y = yPosition - halfSize;
         canvasContextRef.current.drawImage(stamp2, Math.round(x), Math.round(y), size, size);
         return;
       }
       drawLine(xPosition, yPosition, lastX, lastY, (x, y) => {
-        canvasContextRef.current.drawImage(stamp2, Math.round(x), Math.round(y), size, size);
+        canvasContextRef.current.drawImage(stamp2, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
       });
     };
     const doAction = (toolID, xPosition, yPosition, eventType) => {
@@ -84498,11 +84498,13 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
           previousTool.current.id = "line";
           previousTool.current.position = { x: xPosition, y: yPosition };
           previousTool.current.imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+          DEV.log("start line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y);
         } else if (eventType == "pointermove" && previousTool.current.id == "line" && previousTool.current.position && previousTool.current.imageData) {
           canvasContextRef.current.putImageData(previousTool.current.imageData, 0, 0);
           const size = tool.size[toolID] || 1;
           const stamp2 = getStamp(size, (0, import_color.default)(tool.color).hex());
           brush(stamp2, xPosition, yPosition, size, previousTool.current.position.x, previousTool.current.position.y);
+          DEV.log("Draw Line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y, size);
         }
       }
     };

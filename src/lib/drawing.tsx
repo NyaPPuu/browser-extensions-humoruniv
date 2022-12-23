@@ -332,7 +332,7 @@ export default function Drawing() {
 	const brush = (stamp: HTMLCanvasElement, xPosition: number, yPosition: number, size: number, lastX?: number, lastY?: number) => {
 		if (!canvasContextRef.current) return;
 		const halfSize = (size - (size % 2)) / 2;
-		if ((!lastX || !lastY) || xPosition === lastX && yPosition === lastY) {
+		if ((typeof lastX === "undefined" || typeof lastY === "undefined") || xPosition === lastX && yPosition === lastY) {
 			const x = xPosition - halfSize;
 			const y = yPosition - halfSize;
 			canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
@@ -340,7 +340,7 @@ export default function Drawing() {
 		}
 		drawLine(xPosition, yPosition, lastX, lastY, (x, y) => {
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			canvasContextRef.current!.drawImage(stamp, Math.round(x), Math.round(y), size, size);
+			canvasContextRef.current!.drawImage(stamp, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
 		});
 		/*
 		const dist = distanceBetween(xPosition, yPosition, lastX, lastY);
@@ -429,11 +429,13 @@ export default function Drawing() {
 				previousTool.current.id = "line";
 				previousTool.current.position = { x: xPosition, y: yPosition };
 				previousTool.current.imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
+				DEV.log("start line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y);
 			} else if (eventType == "pointermove" && previousTool.current.id == "line" && previousTool.current.position && previousTool.current.imageData) {
 				canvasContextRef.current.putImageData(previousTool.current.imageData, 0, 0);
 				const size = tool.size[toolID] || 1;
 				const stamp = getStamp(size, Color(tool.color).hex());
 				brush(stamp, xPosition, yPosition, size, previousTool.current.position.x, previousTool.current.position.y);
+				DEV.log("Draw Line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y, size);
 			}
 		}
 	};
