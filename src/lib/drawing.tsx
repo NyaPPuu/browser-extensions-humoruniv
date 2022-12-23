@@ -228,6 +228,16 @@ export default function Drawing() {
 		undo: [],
 		redo: [],
 	});
+	const [palette, setPalette] = React.useState<string[]>([
+		"#000",
+		"#FFF",
+		"#F00",
+		"#0F0",
+		"#00F",
+		"#FF0",
+		"#0FF",
+		"#F0F",
+	]);
 	const [position, setPosition] = React.useState<{ [id: string]: Position; }>({});
 	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const canvasContextRef = React.useRef<CanvasRenderingContext2D | null>(null);
@@ -518,6 +528,7 @@ export default function Drawing() {
 					></canvas>
 				</div>
 				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} />
+				<DrawingPalette palette={palette} setPalette={setPalette} tool={tool} setTool={setTool} position={position.palette} />
 			</Box>
 		</DndContext>
 	);
@@ -602,7 +613,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 	return (
 		<>
 			<Paper ref={ref} style={{ top: position?.y || 0, left: position?.x || 0, transform: CSS.Translate.toString(toolBoxDragTransform) }} elevation={3} sx={{ position: "absolute", display: "flex", border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: 0, width: 40, height: 40, p: 1.2 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
-				<Box alignSelf="center" {...toolBoxDragAttributes} {...toolBoxDragListeners} sx={{ cursor: toolBoxIsDragging ? "grabbing" : "grab" }}><DragHandleIcon /></Box>
+				<Box alignSelf="center" textAlign="center" width="100%" {...toolBoxDragAttributes} {...toolBoxDragListeners} sx={{ cursor: toolBoxIsDragging ? "grabbing" : "grab" }}><DragHandleIcon /></Box>
 				<ButtonGroup orientation="vertical" sx={{ border: 0 }}>
 					<Tooltip title="새로 만들기" placement="right">
 						<span>
@@ -743,5 +754,62 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 		</>
 	);
 });
-
 const DrawingToolBox = React.memo(DrawingToolBox_);
+
+const DrawingPalette = ({ palette, setPalette, tool, setTool, position }: { palette: string[]; setPalette: React.Dispatch<React.SetStateAction<string[]>>, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, position: Position }) => {
+	const { attributes: paletteDragAttributes, listeners: paletteDragListeners, transform: paletteDragTransform, isDragging: paletteIsDragging } = useDraggable({
+		id: "palette"
+	});
+	// const handleClickPalette = (event: React.MouseEvent) => {
+	// // const handleClickPalette = (colorIndex: number) => {
+	// 	const target = event.target as HTMLDivElement;
+	// 	// console.log(colorIndex);
+	// 	if (event.button == 2) {
+	// 		// delete
+	// 	} else if (target.dataset.index && palette[target.dataset.index]) {
+	// 		setTool({ ...tool, color: Color(palette[target.dataset.index]).hex() });
+	// 	}
+	// };
+
+	const handleClickPalette = (color: string) => {
+		setTool({ ...tool, color: Color(color).hex() });
+	};
+
+	const handleContextPalette = (index: number) => {
+		// setTool({ ...tool, color: Color(color).hex() });
+		console.log("우클릭");
+		const p = [...palette];
+		p.splice(index, 1);
+		console.log(p);
+		setPalette(p);
+	};
+
+	return (
+		<>
+			<Paper style={{ top: position?.y || 0, left: position?.x || 0, transform: CSS.Translate.toString(paletteDragTransform) }} elevation={3} sx={{ position: "absolute", display: "flex", border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
+				<Box alignSelf="center" textAlign="center" width="100%" {...paletteDragAttributes} {...paletteDragListeners} sx={{ cursor: paletteIsDragging ? "grabbing" : "grab" }}><DragHandleIcon /></Box>
+				<Stack p={1} gap={0.5}>
+					{ palette.map((color, index) => {
+						// return <Button><Box width={40} height={40} bgcolor={color}></Box></Button>;
+						// return <Button sx={{ width: 40, height: 40, bgcolor: color, "&:hover": { bgcolor: "transparent" } }}></Button>;
+						/*
+						data-index={index} onClick={(event: React.MouseEvent) => {
+							console.log(event);
+							if (event.button == 2) {
+								console.log("우클릭");
+								const p = [...palette];
+								p.splice(index, 1);
+								console.log(p);
+								setPalette(p);
+							} else {
+								setTool({ ...tool, color: Color(color).hex() });
+							}
+						}}
+						*/
+						return <Box key={index} width={40} height={40} sx={{ cursor: "pointer" }} bgcolor={color} onClick={handleClickPalette.bind(null, color)} onContextMenu={handleContextPalette.bind(null, index)}></Box>;
+					})}
+				</Stack>
+			</Paper>
+		</>
+	);
+};
