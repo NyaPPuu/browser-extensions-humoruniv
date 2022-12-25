@@ -5,74 +5,43 @@ const path = require("path");
 const srcDir = path.join(__dirname, "src");
 const fs = require("fs");
 
-// const entryPoints = {
-// 	"pages": path.join(srcDir, "pages.ts"),
-// 	"options": path.join(srcDir, "options.tsx"),
-// };
 
-// fs.readdirSync(path.join(srcDir, "plugins")).forEach(function(file) {
-// 	if (path.extname(file) == ".css") {
-// 		entryPoints["plugins/" + path.basename(file)] = path.join(srcDir, "plugins", file);
-// 	} else {
-// 		entryPoints["plugins/" + path.basename(file, path.extname(file))] = path.join(srcDir, "plugins", file);
-// 	}
-// });
-// fs.readdirSync(path.join(srcDir, "routes")).forEach(function(file) {
-// 	entryPoints["routes/" + path.basename(file, path.extname(file))] = path.join(srcDir, "routes", file);
-// });
-// fs.readdirSync(path.join(srcDir, "lib")).forEach(function(file) {
-// 	entryPoints["lib/" + path.basename(file, path.extname(file))] = path.join(srcDir, "lib", file);
-// });
-// console.log(entryPoints);
+class EntryPointHelper {
+	root = "";
+	entryPoints = [];
 
-/*
-const entryPoints = [path.join(srcDir, "pages.ts"), path.join(srcDir, "options.tsx")];
-fs.readdirSync(path.join(srcDir, "plugins")).forEach(function(file) {
-	entryPoints.push(path.join(srcDir, "plugins", file));
-});
-fs.readdirSync(path.join(srcDir, "routes")).forEach(function(file) {
-	entryPoints.push(path.join(srcDir, "routes", file));
-});
-fs.readdirSync(path.join(srcDir, "lib")).forEach(function(file) {
-	entryPoints.push(path.join(srcDir, "lib", file));
-});
+	constructor(root = "") {
+		this.root = root;
+	}
 
-esbuild
-	.build({
-		entryPoints,
-		bundle: true,
-		write: true,
-		minify: process.env.NODE_ENV != "dev",
-		watch:
-			process.env.NODE_ENV == "dev"
-				? {
-					onRebuild(error, result) {
-						if (error) console.error("watch build failed:", error);
-						else console.log("watch build succeeded:", result);
-					}
-				}
-				: false,
-		target: ["chrome107", "firefox57"],
-		outdir: "./public/dist",
-		define: {
-			"process.env.NODE_ENV": `"${process.env.NODE_ENV}"`
+	add(...pathString) {
+		if (Array.isArray(pathString)) {
+			pathString.map(this._add);
+		} else {
+			this._add(pathString);
 		}
-	})
-	.catch(() => process.exit(1));
-*/
+	}
+	_add(pathString) {
+		if (!fs.existsSync(pathString)) return;
+		if (fs.lstatSync(pathString).isDirectory()) {
+			fs.readdirSync(path.join(this.root, pathString)).forEach(function(file) {
+				this.entryPoints.push(path.join(this.root, pathString, file));
+			});
+		} else {
+			entryPoints.push(path.join(this.root, pathString));
+		}
+	}
 
+	list() {
+		return this.entryPoints;
+	}
+}
 
-
-
-
-const entryPoints_inc = [path.join(srcDir, "pages.ts")];
-fs.readdirSync(path.join(srcDir, "plugins")).forEach(function(file) {
-	entryPoints_inc.push(path.join(srcDir, "plugins", file));
-});
-
+const entryInc = new EntryPointHelper(srcDir);
+entryInc.add("pages.ts", "plugins");
 esbuild
 	.build({
-		entryPoints: entryPoints_inc,
+		entryPoints: entryInc.list(),
 		bundle: false,
 		minify: process.env.NODE_ENV != "dev",
 		watch:
@@ -92,20 +61,12 @@ esbuild
 	})
 	.catch(() => process.exit(1));
 
-const entryPoints = [path.join(srcDir, "options.tsx")];
-fs.readdirSync(path.join(srcDir, "routes")).forEach(function(file) {
-	if (file.match(/.*\.tsx?$/))
-		entryPoints.push(path.join(srcDir, "routes", file));
-});
-fs.readdirSync(path.join(srcDir, "lib")).forEach(function(file) {
-	if (file.match(/.*\.(tsx?|css)$/))
-		entryPoints.push(path.join(srcDir, "lib", file));
-});
-
+const entry = new EntryPointHelper(srcDir);
+entry.add("background.ts", "options.ts", "popup.ts", "routes", "lib", "plugins");
 esbuild
 	.build({
 	// format: "cjs",
-		entryPoints,
+		entryPoints: entry.list(),
 		bundle: true,
 		minify: process.env.NODE_ENV != "dev",
 		watch:
@@ -124,4 +85,3 @@ esbuild
 		}
 	})
 	.catch(() => process.exit(1));
-
