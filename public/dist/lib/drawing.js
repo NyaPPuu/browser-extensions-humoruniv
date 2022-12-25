@@ -53604,6 +53604,24 @@ Please use another name.` : (0, _utils.formatMuiErrorMessage)(18));
     }
   });
 
+  // node_modules/@mui/icons-material/Add.js
+  var require_Add = __commonJS({
+    "node_modules/@mui/icons-material/Add.js"(exports) {
+      "use strict";
+      var _interopRequireDefault = require_interopRequireDefault();
+      Object.defineProperty(exports, "__esModule", {
+        value: true
+      });
+      exports.default = void 0;
+      var _createSvgIcon = _interopRequireDefault(require_createSvgIcon2());
+      var _jsxRuntime = require_jsx_runtime();
+      var _default = (0, _createSvgIcon.default)(/* @__PURE__ */ (0, _jsxRuntime.jsx)("path", {
+        d: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+      }), "Add");
+      exports.default = _default;
+    }
+  });
+
   // node_modules/@mui/material/esm/index.js
   var esm_exports = {};
   __export(esm_exports, {
@@ -84131,6 +84149,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
 
   // src/lib/drawing.tsx
   var import_DragHandle = __toESM(require_DragHandle());
+  var import_Add2 = __toESM(require_Add());
   function drawLine(x1, y1, x2, y2, drawFunction) {
     let tmp;
     const steep = Math.abs(y2 - y1) > Math.abs(x2 - x1);
@@ -84698,7 +84717,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       /* @__PURE__ */ import_react11.default.createElement(TooltipToggleButton, { className: "toolButton", value: "paint", TooltipProps: { title: "\uD398\uC778\uD2B8 \uD1B5", "placement": "right" } }, /* @__PURE__ */ import_react11.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react11.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react11.default.createElement("path", { d: "M19.228 18.732l1.768-1.768 1.767 1.768a2.5 2.5 0 1 1-3.535 0zM8.878 1.08l11.314 11.313a1 1 0 0 1 0 1.415l-8.485 8.485a1 1 0 0 1-1.414 0l-8.485-8.485a1 1 0 0 1 0-1.415l7.778-7.778-2.122-2.121L8.88 1.08zM11 6.03L3.929 13.1 11 20.173l7.071-7.071L11 6.029z" }))),
       /* @__PURE__ */ import_react11.default.createElement(TooltipToggleButton, { className: "toolButton", value: "dropper", TooltipProps: { title: "\uC2A4\uD3EC\uC774\uB4DC", "placement": "right" } }, /* @__PURE__ */ import_react11.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react11.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react11.default.createElement("path", { d: "M6.457 18.957l8.564-8.564-1.414-1.414-8.564 8.564 1.414 1.414zm5.735-11.392l-1.414-1.414 1.414-1.414 1.768 1.767 2.829-2.828a1 1 0 0 1 1.414 0l2.121 2.121a1 1 0 0 1 0 1.414l-2.828 2.829 1.767 1.768-1.414 1.414-1.414-1.414L7.243 21H3v-4.243l9.192-9.192z" }))),
       /* @__PURE__ */ import_react11.default.createElement(TooltipToggleButton, { className: "toolButton", value: "line", TooltipProps: { title: "\uC120 \uADF8\uB9AC\uAE30", "placement": "right" } }, /* @__PURE__ */ import_react11.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react11.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react11.default.createElement("path", { d: "M5 8v12h4V8H5zM3 7l4-5 4 5v15H3V7zm16 9v-2h-3v-2h3v-2h-2V8h2V6h-4v14h4v-2h-2v-2h2zM14 4h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" })))
-    ), /* @__PURE__ */ import_react11.default.createElement(Divider_default, null), /* @__PURE__ */ import_react11.default.createElement(ColorPicker, { inputProps: { sx: { p: 0, height: 40 } }, onBlur: handleChangeColor, value: tool.color }), /* @__PURE__ */ import_react11.default.createElement(IconButton_default, { onClick: handleAddPalette, sx: { width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1 } }, "\uFF0B"), (tool.id == "pencil" || tool.id == "eraser" || tool.id == "line") && /* @__PURE__ */ import_react11.default.createElement(import_react11.default.Fragment, null, /* @__PURE__ */ import_react11.default.createElement(
+    ), /* @__PURE__ */ import_react11.default.createElement(Divider_default, null), /* @__PURE__ */ import_react11.default.createElement(ColorPicker, { inputProps: { sx: { p: 0, height: 40 } }, onBlur: handleChangeColor, value: tool.color }), /* @__PURE__ */ import_react11.default.createElement(IconButton_default, { onClick: handleAddPalette, sx: { width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1 } }, /* @__PURE__ */ import_react11.default.createElement(import_Add2.default, null)), (tool.id == "pencil" || tool.id == "eraser" || tool.id == "line") && /* @__PURE__ */ import_react11.default.createElement(import_react11.default.Fragment, null, /* @__PURE__ */ import_react11.default.createElement(
       Slider_default,
       {
         sx: {
@@ -84717,7 +84736,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         max: 30,
         onChange: handleSlideToolSize
       }
-    ), /* @__PURE__ */ import_react11.default.createElement(TextField_default, { type: "number", value: tool.size ? tool.size[tool.id] : 1, onChange: handleChangeToolSize, size: "small", sx: { width: 40 }, inputProps: { sx: { px: 0.3, py: 0.2, textAlign: "center" }, min: 1, max: 30 } }))), /* @__PURE__ */ import_react11.default.createElement(
+    ), /* @__PURE__ */ import_react11.default.createElement(TextField_default, { type: "number", value: tool.size ? tool.size[tool.id] : 1, onChange: handleChangeToolSize, size: "small", sx: { width: 40 }, inputProps: { sx: { px: 0.3, py: 0.2, textAlign: "center" }, min: 1, max: 30 } })), /* @__PURE__ */ import_react11.default.createElement(Divider_default, null), /* @__PURE__ */ import_react11.default.createElement(ButtonGroup_default, { orientation: "vertical", sx: { border: 0 } }, /* @__PURE__ */ import_react11.default.createElement(Tooltip_default, { title: "\uC800\uC7A5", placement: "right" }, /* @__PURE__ */ import_react11.default.createElement("span", null, /* @__PURE__ */ import_react11.default.createElement(Button_default, { className: "toolButton", onClick: handleClickNew }, /* @__PURE__ */ import_react11.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react11.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react11.default.createElement("path", { d: "M7 19v-6h10v6h2V7.828L16.172 5H5v14h2zM4 3h13l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm5 12v4h6v-4H9z" }))))), /* @__PURE__ */ import_react11.default.createElement(Tooltip_default, { title: "\uBD88\uB7EC\uC624\uAE30", placement: "right" }, /* @__PURE__ */ import_react11.default.createElement("span", null, /* @__PURE__ */ import_react11.default.createElement(Button_default, { className: "toolButton", onClick: handleClickNew }, /* @__PURE__ */ import_react11.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react11.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react11.default.createElement("path", { d: "M3 21a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2H20a1 1 0 0 1 1 1v3h-2V7h-7.414l-2-2H4v11.998L5.5 11h17l-2.31 9.243a1 1 0 0 1-.97.757H3zm16.938-8H7.062l-1.5 6h12.876l1.5-6z" }))))))), /* @__PURE__ */ import_react11.default.createElement(
       Dialog_default,
       {
         open: dialog.open == "new",
@@ -84774,8 +84793,8 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       console.log(p);
       setPalette(p);
     };
-    return /* @__PURE__ */ import_react11.default.createElement(import_react11.default.Fragment, null, /* @__PURE__ */ import_react11.default.createElement(Paper_default, { style: { top: (position == null ? void 0 : position.y) || 0, left: (position == null ? void 0 : position.x) || 0, transform: CSS2.Translate.toString(paletteDragTransform) }, elevation: 3, sx: { position: "absolute", display: "flex", minWidth: 56, border: (theme2) => `1px solid ${theme2.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } } }, /* @__PURE__ */ import_react11.default.createElement(Box_default, { alignSelf: "center", textAlign: "center", width: "100%", ...paletteDragAttributes, ...paletteDragListeners, sx: { cursor: paletteIsDragging ? "grabbing" : "grab" } }, /* @__PURE__ */ import_react11.default.createElement(import_DragHandle.default, null)), /* @__PURE__ */ import_react11.default.createElement(Stack_default, { p: 1, gap: 0.5 }, palette.map((color, index) => {
-      return /* @__PURE__ */ import_react11.default.createElement(Box_default, { key: index, width: 40, height: 40, sx: { cursor: "pointer" }, bgcolor: color, onClick: handleClickPalette.bind(null, color), onContextMenu: handleContextPalette.bind(null, index) });
+    return /* @__PURE__ */ import_react11.default.createElement(import_react11.default.Fragment, null, /* @__PURE__ */ import_react11.default.createElement(Paper_default, { style: { top: (position == null ? void 0 : position.y) || 0, left: (position == null ? void 0 : position.x) || 0, transform: CSS2.Translate.toString(paletteDragTransform) }, elevation: 3, sx: { position: "absolute", display: "flex", minWidth: 56, border: (theme2) => `1px solid ${theme2.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } } }, /* @__PURE__ */ import_react11.default.createElement(Box_default, { alignSelf: "center", textAlign: "center", width: "100%", ...paletteDragAttributes, ...paletteDragListeners, sx: { cursor: paletteIsDragging ? "grabbing" : "grab" } }, /* @__PURE__ */ import_react11.default.createElement(import_DragHandle.default, null)), /* @__PURE__ */ import_react11.default.createElement(Stack_default, { p: 1, gap: 0.5, direction: "row", flexWrap: "wrap", sx: { maxWidth: 348, "& .MuiBox-root": { width: 40, height: 40, flexBasis: 40, cursor: "pointer" } } }, palette.map((color, index) => {
+      return /* @__PURE__ */ import_react11.default.createElement(Box_default, { key: index, bgcolor: color, onClick: handleClickPalette.bind(null, color), onContextMenu: handleContextPalette.bind(null, index) });
     }))));
   };
 })();

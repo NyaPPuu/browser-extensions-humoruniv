@@ -6,6 +6,7 @@ import { DndContext, DragEndEvent, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import AddIcon from "@mui/icons-material/Add";
+import Grid from "@mui/material/Unstable_Grid2";
 
 /* 함수 */
 function distanceBetween(x1: number, y1: number, x2: number, y2: number) {
@@ -697,7 +698,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 				</ToggleButtonGroup>
 				<Divider />
 				<ColorPicker inputProps={{ sx: { p: 0, height: 40 } }} onBlur={handleChangeColor} value={tool.color} />
-				<IconButton onClick={handleAddPalette} sx={{ width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1, }}>＋</IconButton>
+				<IconButton onClick={handleAddPalette} sx={{ width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1, }}><AddIcon /></IconButton>
 				{(tool.id == "pencil" || tool.id == "eraser" || tool.id == "line") &&
 					<React.Fragment>
 						<Slider
@@ -720,6 +721,23 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 						<TextField type="number" value={tool.size ? tool.size[tool.id] : 1} onChange={handleChangeToolSize} size="small" sx={{ width: 40 }} inputProps={{ sx: { px: 0.3, py: 0.2, textAlign: "center" }, min: 1, max: 30 }} />
 					</React.Fragment>
 				}
+				<Divider />
+				<ButtonGroup orientation="vertical" sx={{ border: 0 }}>
+					<Tooltip title="저장" placement="right">
+						<span>
+							<Button className="toolButton" onClick={handleClickNew}>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M7 19v-6h10v6h2V7.828L16.172 5H5v14h2zM4 3h13l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm5 12v4h6v-4H9z"/></svg>
+							</Button>
+						</span>
+					</Tooltip>
+					<Tooltip title="불러오기" placement="right">
+						<span>
+							<Button className="toolButton" onClick={handleClickNew}>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M3 21a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2H20a1 1 0 0 1 1 1v3h-2V7h-7.414l-2-2H4v11.998L5.5 11h17l-2.31 9.243a1 1 0 0 1-.97.757H3zm16.938-8H7.062l-1.5 6h12.876l1.5-6z"/></svg>
+							</Button>
+						</span>
+					</Tooltip>
+				</ButtonGroup>
 			</Paper>
 			<Dialog
 				open={dialog.open == "new"}
@@ -813,27 +831,16 @@ const DrawingPalette = ({ palette, setPalette, tool, setTool, position }: { pale
 		<>
 			<Paper style={{ top: position?.y || 0, left: position?.x || 0, transform: CSS.Translate.toString(paletteDragTransform) }} elevation={3} sx={{ position: "absolute", display: "flex", minWidth: 56, border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
 				<Box alignSelf="center" textAlign="center" width="100%" {...paletteDragAttributes} {...paletteDragListeners} sx={{ cursor: paletteIsDragging ? "grabbing" : "grab" }}><DragHandleIcon /></Box>
-				<Stack p={1} gap={0.5}>
+				<Stack p={1} gap={0.5} direction="row" flexWrap="wrap" sx={{ maxWidth: 348, "& .MuiBox-root": { width: 40, height: 40, flexBasis: 40, cursor: "pointer", } }}>
 					{ palette.map((color, index) => {
-						// return <Button><Box width={40} height={40} bgcolor={color}></Box></Button>;
-						// return <Button sx={{ width: 40, height: 40, bgcolor: color, "&:hover": { bgcolor: "transparent" } }}></Button>;
-						/*
-						data-index={index} onClick={(event: React.MouseEvent) => {
-							console.log(event);
-							if (event.button == 2) {
-								console.log("우클릭");
-								const p = [...palette];
-								p.splice(index, 1);
-								console.log(p);
-								setPalette(p);
-							} else {
-								setTool({ ...tool, color: Color(color).hex() });
-							}
-						}}
-						*/
-						return <Box key={index} width={40} height={40} sx={{ cursor: "pointer" }} bgcolor={color} onClick={handleClickPalette.bind(null, color)} onContextMenu={handleContextPalette.bind(null, index)}></Box>;
+						return <Box key={index} bgcolor={color} onClick={handleClickPalette.bind(null, color)} onContextMenu={handleContextPalette.bind(null, index)}></Box>;
 					})}
 				</Stack>
+				{/* <Grid container gap={0.5} p={1} sx={{ "& .MuiGrid2-direction-xs-row": { minWidth: 40, height: 40, cursor: "pointer", } }} columns={9}>
+					{ palette.map((color, index) => {
+						return <Grid key={index} bgcolor={color} xs={1} onClick={handleClickPalette.bind(null, color)} onContextMenu={handleContextPalette.bind(null, index)}></Grid>;
+					})}
+				</Grid> */}
 			</Paper>
 		</>
 	);
