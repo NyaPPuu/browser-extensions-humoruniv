@@ -323,6 +323,7 @@ export default function Drawing() {
 		} else if (event.code == "KeyT") { // t
 			if (pointer.current.pageX != null && pointer.current.pageY != null) {
 				setPosition({
+					...position,
 					toolBox: { x: pointer.current.pageX - (toolBoxRef.current?.offsetWidth ? toolBoxRef.current?.offsetWidth / 2 : 0), y: pointer.current.pageY - (toolBoxRef.current?.offsetHeight ? toolBoxRef.current?.offsetHeight / 2 : 0) }
 				});
 			}

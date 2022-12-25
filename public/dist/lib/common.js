@@ -77935,7 +77935,17 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
     });
     const customTheme = createTheme_default(theme, {
       components: {
+        MuiPopover: {
+          defaultProps: {
+            container: root
+          }
+        },
         MuiPopper: {
+          defaultProps: {
+            container: root
+          }
+        },
+        MuiModal: {
           defaultProps: {
             container: root
           }

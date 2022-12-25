@@ -84406,6 +84406,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       } else if (event.code == "KeyT") {
         if (pointer.current.pageX != null && pointer.current.pageY != null) {
           setPosition({
+            ...position,
             toolBox: { x: pointer.current.pageX - (((_a = toolBoxRef.current) == null ? void 0 : _a.offsetWidth) ? ((_b = toolBoxRef.current) == null ? void 0 : _b.offsetWidth) / 2 : 0), y: pointer.current.pageY - (((_c = toolBoxRef.current) == null ? void 0 : _c.offsetHeight) ? ((_d = toolBoxRef.current) == null ? void 0 : _d.offsetHeight) / 2 : 0) }
           });
         }

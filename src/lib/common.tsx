@@ -386,7 +386,17 @@ export function renderShadow(root: Element | DocumentFragment, children: React.R
 
 	const customTheme = createTheme(theme, {
 		components: {
+			MuiPopover: {
+				defaultProps: {
+					container: root,
+				},
+			},
 			MuiPopper: {
+				defaultProps: {
+					container: root,
+				},
+			},
+			MuiModal: {
 				defaultProps: {
 					container: root,
 				},
