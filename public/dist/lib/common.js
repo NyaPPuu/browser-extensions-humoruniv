@@ -77933,9 +77933,18 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       prepend: true,
       container: root
     });
+    const customTheme = createTheme_default(theme, {
+      components: {
+        MuiPopper: {
+          defaultProps: {
+            container: root
+          }
+        }
+      }
+    });
     const reactRoot = import_client.default.createRoot(root);
     reactRoot.render(
-      /* @__PURE__ */ import_react8.default.createElement(import_react8.default.StrictMode, null, /* @__PURE__ */ import_react8.default.createElement(import_react7.CacheProvider, { value: cacheRoot }, /* @__PURE__ */ import_react8.default.createElement(CssBaseline_default, null), children))
+      /* @__PURE__ */ import_react8.default.createElement(import_react8.default.StrictMode, null, /* @__PURE__ */ import_react8.default.createElement(import_react7.CacheProvider, { value: cacheRoot }, /* @__PURE__ */ import_react8.default.createElement(import_system7.ThemeProvider, { theme: customTheme }, /* @__PURE__ */ import_react8.default.createElement(CssBaseline_default, null), children)))
     );
   }
   function render(children) {

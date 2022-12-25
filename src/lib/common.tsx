@@ -5,7 +5,7 @@ const app: typeof chrome | typeof browser = (typeof browser == "undefined" && ty
 */
 
 import { CacheProvider } from "@emotion/react";
-import { CssBaseline, ThemeProvider } from "@mui/material";
+import { createTheme, CssBaseline, ThemeProvider } from "@mui/material";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import createCache from "@emotion/cache";
@@ -384,12 +384,24 @@ export function renderShadow(root: Element | DocumentFragment, children: React.R
 		// speedy: false,
 	});
 
+	const customTheme = createTheme(theme, {
+		components: {
+			MuiPopper: {
+				defaultProps: {
+					container: root,
+				},
+			},
+		},
+	});
+
 	const reactRoot = ReactDOM.createRoot(root);
 	reactRoot.render(
 		<React.StrictMode>
 			<CacheProvider value={cacheRoot}>
-				<CssBaseline />
-				{ children }
+				<ThemeProvider theme={customTheme}>
+					<CssBaseline />
+					{ children }
+				</ThemeProvider>
 			</CacheProvider>
 		</React.StrictMode>
 	);
