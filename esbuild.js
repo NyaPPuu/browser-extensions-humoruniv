@@ -16,19 +16,20 @@ class EntryPointHelper {
 
 	add(...pathString) {
 		if (Array.isArray(pathString)) {
-			pathString.map(this._add);
+			pathString.map((p) => { this._add(p) });
 		} else {
 			this._add(pathString);
 		}
 	}
 	_add(pathString) {
-		if (!fs.existsSync(pathString)) return;
-		if (fs.lstatSync(pathString).isDirectory()) {
-			fs.readdirSync(path.join(this.root, pathString)).forEach(function(file) {
-				this.entryPoints.push(path.join(this.root, pathString, file));
+		const fullPath = path.join(this.root, pathString);
+		if (!fs.existsSync(fullPath)) return;
+		if (fs.lstatSync(fullPath).isDirectory()) {
+			fs.readdirSync(fullPath).forEach((file) => {
+				this.entryPoints.push(path.join(fullPath, file));
 			});
 		} else {
-			entryPoints.push(path.join(this.root, pathString));
+			this.entryPoints.push(fullPath);
 		}
 	}
 
