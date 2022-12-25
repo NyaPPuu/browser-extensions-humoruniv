@@ -84505,6 +84505,8 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       } else if (toolID == "dropper") {
         if (eventType != "pointerdown" && eventType != "pointermove")
           return;
+        xPosition = Math.round(xPosition);
+        yPosition = Math.round(yPosition);
         const imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
         const getColor = getPixelColorFromImageData(imageData, xPosition, yPosition, canvasRef.current.width);
         setTool({ ...tool, color: (0, import_color.default)(getColor).hex() });
@@ -84772,7 +84774,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       console.log(p);
       setPalette(p);
     };
-    return /* @__PURE__ */ import_react11.default.createElement(import_react11.default.Fragment, null, /* @__PURE__ */ import_react11.default.createElement(Paper_default, { style: { top: (position == null ? void 0 : position.y) || 0, left: (position == null ? void 0 : position.x) || 0, transform: CSS2.Translate.toString(paletteDragTransform) }, elevation: 3, sx: { position: "absolute", display: "flex", minWidth: 58, border: (theme2) => `1px solid ${theme2.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } } }, /* @__PURE__ */ import_react11.default.createElement(Box_default, { alignSelf: "center", textAlign: "center", width: "100%", ...paletteDragAttributes, ...paletteDragListeners, sx: { cursor: paletteIsDragging ? "grabbing" : "grab" } }, /* @__PURE__ */ import_react11.default.createElement(import_DragHandle.default, null)), /* @__PURE__ */ import_react11.default.createElement(Stack_default, { p: 1, gap: 0.5 }, palette.map((color, index) => {
+    return /* @__PURE__ */ import_react11.default.createElement(import_react11.default.Fragment, null, /* @__PURE__ */ import_react11.default.createElement(Paper_default, { style: { top: (position == null ? void 0 : position.y) || 0, left: (position == null ? void 0 : position.x) || 0, transform: CSS2.Translate.toString(paletteDragTransform) }, elevation: 3, sx: { position: "absolute", display: "flex", minWidth: 56, border: (theme2) => `1px solid ${theme2.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } } }, /* @__PURE__ */ import_react11.default.createElement(Box_default, { alignSelf: "center", textAlign: "center", width: "100%", ...paletteDragAttributes, ...paletteDragListeners, sx: { cursor: paletteIsDragging ? "grabbing" : "grab" } }, /* @__PURE__ */ import_react11.default.createElement(import_DragHandle.default, null)), /* @__PURE__ */ import_react11.default.createElement(Stack_default, { p: 1, gap: 0.5 }, palette.map((color, index) => {
       return /* @__PURE__ */ import_react11.default.createElement(Box_default, { key: index, width: 40, height: 40, sx: { cursor: "pointer" }, bgcolor: color, onClick: handleClickPalette.bind(null, color), onContextMenu: handleContextPalette.bind(null, index) });
     }))));
   };

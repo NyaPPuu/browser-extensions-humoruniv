@@ -435,6 +435,8 @@ export default function Drawing() {
 			canvasContextRef.current.putImageData(imageData, 0, 0);
 		} else if (toolID == "dropper") {
 			if (eventType != "pointerdown" && eventType != "pointermove") return;
+			xPosition = Math.round(xPosition);
+			yPosition = Math.round(yPosition);
 			const imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
 			const getColor = getPixelColorFromImageData(imageData, xPosition, yPosition, canvasRef.current.width);
 			setTool({ ...tool, color: Color(getColor).hex() });
@@ -809,7 +811,7 @@ const DrawingPalette = ({ palette, setPalette, tool, setTool, position }: { pale
 
 	return (
 		<>
-			<Paper style={{ top: position?.y || 0, left: position?.x || 0, transform: CSS.Translate.toString(paletteDragTransform) }} elevation={3} sx={{ position: "absolute", display: "flex", minWidth: 58, border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
+			<Paper style={{ top: position?.y || 0, left: position?.x || 0, transform: CSS.Translate.toString(paletteDragTransform) }} elevation={3} sx={{ position: "absolute", display: "flex", minWidth: 56, border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
 				<Box alignSelf="center" textAlign="center" width="100%" {...paletteDragAttributes} {...paletteDragListeners} sx={{ cursor: paletteIsDragging ? "grabbing" : "grab" }}><DragHandleIcon /></Box>
 				<Stack p={1} gap={0.5}>
 					{ palette.map((color, index) => {

@@ -63,7 +63,7 @@ esbuild
 	.catch(() => process.exit(1));
 
 const entry = new EntryPointHelper(srcDir);
-entry.add("background.ts", "options.ts", "popup.ts", "routes", "lib", "plugins");
+entry.add("background.ts", "options.ts", "popup.ts", "routes", "lib");
 esbuild
 	.build({
 	// format: "cjs",
