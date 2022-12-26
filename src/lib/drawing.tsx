@@ -115,6 +115,21 @@ function fillCircle(imageData: ImageData, color: { [key: string]: number; }) {
 		}
 	}
 }
+function aliasedCircle(ctx: CanvasRenderingContext2D, xc: number, yc: number, r: number) { // NOTE: for fill only!
+	let x = r, y = 0, cd = 0;
+
+	// middle line
+	ctx.rect(xc - x, yc, r<<1, 1);
+
+	while (x >= y) {
+		cd -= (--x) - (++y);
+		if (cd < 0) cd += x++;
+		ctx.rect(xc - y, yc - x, y<<1, 1); // upper 1/4
+		ctx.rect(xc - x, yc - y, x<<1, 1); // upper 2/4
+		ctx.rect(xc - x, yc + y, x<<1, 1); // lower 3/4
+		ctx.rect(xc - y, yc + x, y<<1, 1); // lower 4/4
+	}
+}
 const getPixelColorFromImageData = (imageData: ImageData, xPosition: number, yPosition: number, width: number): number[] => {
 	const position = (xPosition + yPosition * width) * 4;
 	return [imageData.data[position + 0], imageData.data[position + 1], imageData.data[position + 2]];
@@ -135,27 +150,34 @@ const isSameColor = (firstColor?: number[], secondColor?: number[]) => {
 
 const makeStamp = (toolSize: number, colorString: string) => {
 	const canvas = document.createElement("canvas");
-	const size = toolSize + (toolSize % 2);
+	// const size = toolSize + (toolSize % 2);
+	const size = toolSize;
 	canvas.width = size;
 	canvas.height = size;
 	const context = canvas.getContext("2d");
-	const color = Color(colorString).object();
+	const color = Color(colorString).hex();
 
 	if (context === null) {
 		console.error("스탬프 생성 중 오류가 발생했습니다.");
 		throw new Error("스탬프 생성 중 오류가 발생했습니다.");
 	}
 
-	const imageData = context.createImageData(size, size);
-	for (let i = 0; i < imageData.data.length; i += 4) {
-		imageData.data[i] = 255;
-		imageData.data[i + 1] = 255;
-		imageData.data[i + 2] = 255;
-		imageData.data[i + 3] = 0;
-	}
-	plotCircle(size * 2, (size * 4) * (size / 2), size / 2, imageData, size, color);
-	fillCircle(imageData, color);
-	context.putImageData(imageData, 0, 0);
+	// const imageData = context.createImageData(size, size);
+	// for (let i = 0; i < imageData.data.length; i += 4) {
+	// 	imageData.data[i] = 255;
+	// 	imageData.data[i + 1] = 255;
+	// 	imageData.data[i + 2] = 255;
+	// 	imageData.data[i + 3] = 0;
+	// }
+	// plotCircle(size * 2, (size * 4) * (size / 2), size / 2, imageData, size, color);
+	// fillCircle(imageData, color);
+	// context.putImageData(imageData, 0, 0);
+
+	context.fillStyle = color;
+	aliasedCircle(context, size / 2, size / 2, size / 2);
+	context.fill();
+
+	DEV.log("makeStamp", toolSize, color, canvas.toDataURL());
 	return canvas;
 };
 
@@ -698,7 +720,9 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 				</ToggleButtonGroup>
 				<Divider />
 				<ColorPicker inputProps={{ sx: { p: 0, height: 40 } }} onBlur={handleChangeColor} value={tool.color} />
-				<IconButton onClick={handleAddPalette} sx={{ width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1, }}><AddIcon /></IconButton>
+				<Tooltip title="파레트에 추가" placement="right">
+					<IconButton onClick={handleAddPalette} sx={{ width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1, }}><AddIcon /></IconButton>
+				</Tooltip>
 				{(tool.id == "pencil" || tool.id == "eraser" || tool.id == "line") &&
 					<React.Fragment>
 						<Slider
@@ -838,7 +862,7 @@ const DrawingPalette = ({ palette, setPalette, tool, setTool, position }: { pale
 		<>
 			<Paper style={{ top: position?.y || 0, left: position?.x || 0, transform: CSS.Translate.toString(paletteDragTransform) }} elevation={3} sx={{ position: "absolute", display: "flex", minWidth: 56, border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
 				<Box alignSelf="center" textAlign="center" width="100%" {...paletteDragAttributes} {...paletteDragListeners} sx={{ cursor: paletteIsDragging ? "grabbing" : "grab" }}><DragHandleIcon /></Box>
-				<Stack p={1} gap={0.5} direction="row" flexWrap="wrap" sx={{ maxWidth: 348, "& .MuiBox-root": { width: 40, height: 40, flexBasis: 40, cursor: "pointer", } }}>
+				<Stack p={1} gap={0.5} direction="row" flexWrap="wrap" sx={{ maxWidth: 348, "& .MuiBox-root": { width: 40, height: 40, flexBasis: 40, cursor: "pointer", border: (theme) => `1px solid ${theme.palette.divider}`, boxSizing: "border-box", } }}>
 					{ palette.map((color, index) => {
 						return <Box key={index} bgcolor={color} onClick={handleClickPalette.bind(null, color)} onContextMenu={handleContextPalette.bind(null, index)}></Box>;
 					})}
