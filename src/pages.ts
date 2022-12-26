@@ -90,24 +90,24 @@ function delegate(targetNode: Node | null, eventList: string, handler: (event: E
 function docReady(callback: () => void) {
 
 	function completed() {
-		document.removeEventListener( "DOMContentLoaded", completed, false );
-		window.removeEventListener( "load", completed, false );
+		document.removeEventListener("DOMContentLoaded", completed, false);
+		window.removeEventListener("load", completed, false);
 		callback();
 	}
 
 	// Events.on(document, 'DOMContentLoaded', completed)
 
-	if ( document.readyState === "complete" ) {
+	if (document.readyState === "complete") {
 		// Handle it asynchronously to allow scripts the opportunity to delay ready
-		setTimeout( callback );
+		setTimeout(callback);
 
 	} else {
 
 		// Use the handy event callback
-		document.addEventListener( "DOMContentLoaded", completed, false );
+		document.addEventListener("DOMContentLoaded", completed, false);
 
 		// A fallback to window.onload, that will always work
-		window.addEventListener( "load", completed, false );
+		window.addEventListener("load", completed, false);
 	}
 }
 
@@ -118,7 +118,6 @@ function injectScript(file: string, node: string) {
 	s.setAttribute("src", file);
 	th.appendChild(s);
 }
-
 
 
 interface Page extends URL {

@@ -55,6 +55,7 @@ esbuild
 				}
 				: false,
 		target: ["chrome107", "firefox57"],
+		outbase: "./src",
 		outdir: "./public/dist",
 		define: {
 			"process.env.NODE_ENV": `"${process.env.NODE_ENV}"`
@@ -63,7 +64,7 @@ esbuild
 	.catch(() => process.exit(1));
 
 const entry = new EntryPointHelper(srcDir);
-entry.add("background.ts", "options.ts", "popup.ts", "routes", "lib");
+entry.add("background.ts", "options.tsx", "popup.tsx", "routes");
 esbuild
 	.build({
 	// format: "cjs",
@@ -80,6 +81,7 @@ esbuild
 				}
 				: false,
 		target: ["chrome107", "firefox57"],
+		outbase: "./src",
 		outdir: "./public/dist",
 		define: {
 			"process.env.NODE_ENV": `"${process.env.NODE_ENV}"`
