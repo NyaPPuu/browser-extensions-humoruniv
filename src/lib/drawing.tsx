@@ -150,32 +150,34 @@ const isSameColor = (firstColor?: number[], secondColor?: number[]) => {
 
 const makeStamp = (toolSize: number, colorString: string) => {
 	const canvas = document.createElement("canvas");
-	// const size = toolSize + (toolSize % 2);
-	const size = toolSize;
+	const size = toolSize + (toolSize % 2);
+	// const size = toolSize;
 	canvas.width = size;
 	canvas.height = size;
 	const context = canvas.getContext("2d");
-	const color = Color(colorString).hex();
+	// const color = Color(colorString).hex();
+	const color = Color(colorString).object();
 
 	if (context === null) {
 		console.error("스탬프 생성 중 오류가 발생했습니다.");
 		throw new Error("스탬프 생성 중 오류가 발생했습니다.");
 	}
+	context.imageSmoothingEnabled = false;
 
-	// const imageData = context.createImageData(size, size);
-	// for (let i = 0; i < imageData.data.length; i += 4) {
-	// 	imageData.data[i] = 255;
-	// 	imageData.data[i + 1] = 255;
-	// 	imageData.data[i + 2] = 255;
-	// 	imageData.data[i + 3] = 0;
-	// }
-	// plotCircle(size * 2, (size * 4) * (size / 2), size / 2, imageData, size, color);
-	// fillCircle(imageData, color);
-	// context.putImageData(imageData, 0, 0);
+	const imageData = context.createImageData(size, size);
+	for (let i = 0; i < imageData.data.length; i += 4) {
+		imageData.data[i] = 255;
+		imageData.data[i + 1] = 255;
+		imageData.data[i + 2] = 255;
+		imageData.data[i + 3] = 0;
+	}
+	plotCircle(size * 2, (size * 4) * (size / 2), size / 2, imageData, size, color);
+	fillCircle(imageData, color);
+	context.putImageData(imageData, 0, 0);
 
-	context.fillStyle = color;
-	aliasedCircle(context, size / 2, size / 2, size / 2);
-	context.fill();
+	// context.fillStyle = color;
+	// aliasedCircle(context, size / 2, size / 2, size / 2);
+	// context.fill();
 
 	DEV.log("makeStamp", toolSize, color, canvas.toDataURL());
 	return canvas;
@@ -518,6 +520,7 @@ export default function Drawing() {
 		if (canvasRef.current) {
 			const ctx = canvasRef.current.getContext("2d", { willReadFrequently: true });
 			if (ctx) {
+				ctx.imageSmoothingEnabled = false;
 				ctx.fillStyle = "#FFF";
 				ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 				canvasContextRef.current = ctx;
