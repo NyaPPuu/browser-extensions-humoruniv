@@ -1,12 +1,13 @@
-import { Box, Button, ButtonGroup, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, Paper, Slider, Stack, styled, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography } from "@mui/material";
+import { Alert, Box, Button, ButtonGroup, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, Paper, Slider, Snackbar, Stack, styled, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography } from "@mui/material";
 import React, { useContext, VFC } from "react";
-import { DEV, matchRule, render } from "../lib/common";
+import { DEV, matchRule } from "../lib/common";
 import Color from "color";
 import { DndContext, DragEndEvent, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import AddIcon from "@mui/icons-material/Add";
 import Grid from "@mui/material/Unstable_Grid2";
+import CloseIcon from "@mui/icons-material/Close";
 
 /* 함수 */
 function distanceBetween(x1: number, y1: number, x2: number, y2: number) {
@@ -263,10 +264,30 @@ export default function Drawing() {
 		"#0FF",
 		"#F0F",
 	]);
-	const [position, setPosition] = React.useState<{ [id: string]: Position; }>({});
+	const [position, setPosition] = React.useState<{ [id: string]: Position; }>({
+		toolBox: {
+			x: 420,
+			y: 0,
+		},
+		palette: {
+			x: 464,
+			y: 0,
+		},
+	});
 	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const canvasContextRef = React.useRef<CanvasRenderingContext2D | null>(null);
 	const toolBoxRef = React.useRef<HTMLDivElement>(null);
+
+	const [snackPack, setSnackPack] = React.useState<{ message?: string; type: AlertColor; open: boolean; }>({
+		type: "success",
+		open: false
+	});
+	const showSnackbar = function(message: string, type: AlertColor = "success") {
+		setSnackPack({ message, type, open: true });
+	};
+	const handleCloseSnackbar = function() {
+		setSnackPack({ ...snackPack, open: false });
+	};
 
 	const handleDragEnd = (event: DragEndEvent) => {
 		// DEV.log("handleDragEnd", event);
@@ -546,7 +567,7 @@ export default function Drawing() {
 
 	return (
 		<DndContext onDragEnd={handleDragEnd}>
-			<Box onContextMenu={handleContextmenu}>
+			<Box onContextMenu={handleContextmenu} position="relative">
 				<style scoped>
 					{`
 				a, abbr, acronym, address, applet, article, aside, audio, b, big, blockquote, body, canvas, caption, center, cite, code, dd, del, details, dfn, div, dl, dt, em, embed, fieldset, figcaption, figure, footer, form, h1, h2, h3, h4, h5, h6, header, hgroup, html, i, iframe, img, ins, kbd, label, legend, li, mark, menu, nav, object, ol, output, p, pre, q, ruby, s, samp, section, small, span, strike, strong, sub, summary, sup, table, tbody, td, tfoot, th, thead, time, tr, tt, u, ul, var, video {border:0;font-size:100%;font:inherit;margin:0;padding:0;vertical-align:baseline}
@@ -572,14 +593,39 @@ export default function Drawing() {
 						onPointerDown={handlePointerDown}
 					></canvas>
 				</div>
-				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} palette={palette} setPalette={setPalette} />
 				<DrawingPalette palette={palette} setPalette={setPalette} tool={tool} setTool={setTool} position={position.palette} />
+				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} palette={palette} setPalette={setPalette} showSnackbar={showSnackbar} />
 			</Box>
+			<Snackbar
+				key={"alert"}
+				open={snackPack.open}
+				autoHideDuration={snackPack.type == "error" ? 10000 : 3000}
+				onClose={handleCloseSnackbar}
+				message={snackPack.message}
+				anchorOrigin={{ vertical: "top", horizontal: "center" }}
+				action={
+					<React.Fragment>
+						<Button color="secondary" size="small" onClick={handleCloseSnackbar}>
+						UNDO
+						</Button>
+						<IconButton
+							aria-label="close"
+							color="inherit"
+							sx={{ p: 0.5 }}
+							onClick={handleCloseSnackbar}
+						>
+							<CloseIcon />
+						</IconButton>
+					</React.Fragment>
+				}
+			>
+				<Alert onClose={handleCloseSnackbar} severity={snackPack.type} sx={{ width: "100%" }} variant="filled">{snackPack.message}</Alert>
+			</Snackbar>
 		</DndContext>
 	);
 }
 
-const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, canvasContextRef, position, tool, setTool, history, loadHistory, resetHistory, palette, setPalette }: { canvasRef: React.RefObject<HTMLCanvasElement>, canvasContextRef: React.MutableRefObject<CanvasRenderingContext2D | null>, position: Position, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, history: History, loadHistory: (type: "redo" | "undo") => void, resetHistory: () => void, palette: string[]; setPalette: React.Dispatch<React.SetStateAction<string[]>> }, ref: React.ForwardedRef<HTMLDivElement>) {
+const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, canvasContextRef, position, tool, setTool, history, loadHistory, resetHistory, palette, setPalette, showSnackbar }: { canvasRef: React.RefObject<HTMLCanvasElement>, canvasContextRef: React.MutableRefObject<CanvasRenderingContext2D | null>, position: Position, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, history: History, loadHistory: (type: "redo" | "undo") => void, resetHistory: () => void, palette: string[]; setPalette: React.Dispatch<React.SetStateAction<string[]>>, showSnackbar: (message: string, type?: AlertColor) => void }, ref: React.ForwardedRef<HTMLDivElement>) {
 
 	const { attributes: toolBoxDragAttributes, listeners: toolBoxDragListeners, transform: toolBoxDragTransform, isDragging: toolBoxIsDragging } = useDraggable({
 		id: "toolBox"
@@ -658,6 +704,10 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 		image.onload = function() {
 			canvasContextRef.current?.drawImage(image, 0, 0);
 		};
+	};
+
+	const handleClickSave = () => {
+		showSnackbar("saved");
 	};
 
 	return (
@@ -752,7 +802,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 				<ButtonGroup orientation="vertical" sx={{ border: 0 }}>
 					<Tooltip title="저장" placement="right">
 						<span>
-							<Button className="toolButton" onClick={handleClickNew}>
+							<Button className="toolButton" onClick={handleClickSave}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M7 19v-6h10v6h2V7.828L16.172 5H5v14h2zM4 3h13l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm5 12v4h6v-4H9z"/></svg>
 							</Button>
 						</span>
