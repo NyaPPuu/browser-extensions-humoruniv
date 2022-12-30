@@ -1,6 +1,6 @@
 import { Alert, Box, Button, ButtonGroup, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, Paper, Slider, Snackbar, Stack, styled, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography } from "@mui/material";
 import React, { useContext, VFC } from "react";
-import { DEV, matchRule } from "../lib/common";
+import app, { DEV, matchRule } from "../lib/common";
 import Color from "color";
 import { DndContext, DragEndEvent, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -277,6 +277,8 @@ export default function Drawing() {
 	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const canvasContextRef = React.useRef<CanvasRenderingContext2D | null>(null);
 	const toolBoxRef = React.useRef<HTMLDivElement>(null);
+	// const [timeline, setTimeline] = React.useState<number[]>([]);
+	const [timeline, setTimeline] = React.useState<number>(5);
 
 	const [snackPack, setSnackPack] = React.useState<{ message?: string; type: AlertColor; open: boolean; }>({
 		type: "success",
@@ -508,6 +510,7 @@ export default function Drawing() {
 			undo: [],
 			redo: [],
 		});
+		setTimeline([]);
 	};
 	const saveHistory = () => {
 		if (!canvasRef.current) return;
@@ -532,10 +535,61 @@ export default function Drawing() {
 		setHistory({
 			...currentHistory
 		});
+		setTimeline([]);
 		image.onload = function() {
 			canvasContextRef.current?.drawImage(image, 0, 0);
 		};
 	};
+	const saveData = () => {
+		if (!canvasRef.current) return;
+		showSnackbar("저장 중...");
+		const optionData = {
+			tool,
+			palette,
+			history,
+			width: canvasRef.current.width,
+			height: canvasRef.current.height,
+		};
+		app.storage.local.set({ "write.picture": { "url": canvasRef.current.toDataURL(), "data": optionData } }, () => {
+			showSnackbar("저장 완료");
+		});
+	};
+	const loadData = () => {
+		showSnackbar("불러오는 중...");
+		app.storage.local.get("write.picture", (storageData: { [key: string]: any }) => {
+			if (!canvasRef.current || !storageData?.["write.picture"]) return;
+			const savedData = storageData["write.picture"];
+			console.log("saved data", savedData);
+			setTool({ ...savedData.data.tool });
+			setPalette([ ...savedData.data.palette ]);
+			setHistory({ ...savedData.data.history });
+			canvasRef.current.width = savedData.data.width;
+			canvasRef.current.height = savedData.data.height;
+			const image = new Image();
+			image.src = savedData.url;
+			image.onload = function() {
+				canvasContextRef.current?.drawImage(image, 0, 0);
+			};
+			showSnackbar("불러오기 완료");
+		});
+	};
+	const makeTimeline = (count = 5) => {
+		const intervalCount = Math.ceil(history.undo.length / (count * 1 + 1));
+		const tempTimeline = [];
+		for (let i = intervalCount; i < history.undo.length; i += intervalCount) {
+			tempTimeline.push(i);
+		}
+		setTimeline(count);
+	};
+	const getTimeline = React.useMemo(() => {
+		const tempTimeline: React.ReactNode[] = [];
+		if (!history.undo.length || !timeline) return tempTimeline;
+		const intervalCount = Math.ceil(history.undo.length / (timeline * 1 + 1));
+		for (let i = intervalCount; i < history.undo.length; i += intervalCount) {
+			tempTimeline.push(<Box key={i} border="1px solid grey"><img width={100} src={history.undo[i]} /></Box>);
+		}
+		return tempTimeline;
+	}, [history, timeline]);
 
 	React.useEffect(() => {
 		if (canvasRef.current) {
@@ -593,8 +647,14 @@ export default function Drawing() {
 						onPointerDown={handlePointerDown}
 					></canvas>
 				</div>
+				<Stack direction="row" mt={1} spacing={0.5}>
+					{/* {timeline.map((historyIdx) => {
+						return <Box key={historyIdx} border="1px solid grey"><img width={100} src={history.undo[historyIdx]} /></Box>;
+					})} */}
+					{getTimeline}
+				</Stack>
 				<DrawingPalette palette={palette} setPalette={setPalette} tool={tool} setTool={setTool} position={position.palette} />
-				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} palette={palette} setPalette={setPalette} showSnackbar={showSnackbar} />
+				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} palette={palette} setPalette={setPalette} saveData={saveData} loadData={loadData} makeTimeline={makeTimeline} />
 			</Box>
 			<Snackbar
 				key={"alert"}
@@ -625,7 +685,7 @@ export default function Drawing() {
 	);
 }
 
-const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, canvasContextRef, position, tool, setTool, history, loadHistory, resetHistory, palette, setPalette, showSnackbar }: { canvasRef: React.RefObject<HTMLCanvasElement>, canvasContextRef: React.MutableRefObject<CanvasRenderingContext2D | null>, position: Position, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, history: History, loadHistory: (type: "redo" | "undo") => void, resetHistory: () => void, palette: string[]; setPalette: React.Dispatch<React.SetStateAction<string[]>>, showSnackbar: (message: string, type?: AlertColor) => void }, ref: React.ForwardedRef<HTMLDivElement>) {
+const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, canvasContextRef, position, tool, setTool, history, loadHistory, resetHistory, palette, setPalette, saveData, loadData, makeTimeline }: { canvasRef: React.RefObject<HTMLCanvasElement>, canvasContextRef: React.MutableRefObject<CanvasRenderingContext2D | null>, position: Position, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, history: History, loadHistory: (type: "redo" | "undo") => void, resetHistory: () => void, palette: string[]; setPalette: React.Dispatch<React.SetStateAction<string[]>>, saveData: () => void, loadData: () => void, makeTimeline: (count: number) => void }, ref: React.ForwardedRef<HTMLDivElement>) {
 
 	const { attributes: toolBoxDragAttributes, listeners: toolBoxDragListeners, transform: toolBoxDragTransform, isDragging: toolBoxIsDragging } = useDraggable({
 		id: "toolBox"
@@ -705,9 +765,8 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 			canvasContextRef.current?.drawImage(image, 0, 0);
 		};
 	};
-
-	const handleClickSave = () => {
-		showSnackbar("saved");
+	const handleClickTimeline = () => {
+		makeTimeline(5);
 	};
 
 	return (
@@ -802,21 +861,21 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 				<ButtonGroup orientation="vertical" sx={{ border: 0 }}>
 					<Tooltip title="저장" placement="right">
 						<span>
-							<Button className="toolButton" onClick={handleClickSave}>
+							<Button className="toolButton" onClick={saveData}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M7 19v-6h10v6h2V7.828L16.172 5H5v14h2zM4 3h13l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm5 12v4h6v-4H9z"/></svg>
 							</Button>
 						</span>
 					</Tooltip>
 					<Tooltip title="불러오기" placement="right">
 						<span>
-							<Button className="toolButton" onClick={handleClickNew}>
+							<Button className="toolButton" onClick={loadData}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M3 21a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2H20a1 1 0 0 1 1 1v3h-2V7h-7.414l-2-2H4v11.998L5.5 11h17l-2.31 9.243a1 1 0 0 1-.97.757H3zm16.938-8H7.062l-1.5 6h12.876l1.5-6z"/></svg>
 							</Button>
 						</span>
 					</Tooltip>
 					<Tooltip title="타임라인 만들기" placement="right">
 						<span>
-							<Button className="toolButton" onClick={handleClickNew}>
+							<Button className="toolButton" onClick={handleClickTimeline}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M2 3.993A1 1 0 0 1 2.992 3h18.016c.548 0 .992.445.992.993v16.014a1 1 0 0 1-.992.993H2.992A.993.993 0 0 1 2 20.007V3.993zM8 5v14h8V5H8zM4 5v2h2V5H4zm14 0v2h2V5h-2zM4 9v2h2V9H4zm14 0v2h2V9h-2zM4 13v2h2v-2H4zm14 0v2h2v-2h-2zM4 17v2h2v-2H4zm14 0v2h2v-2h-2z"/></svg>
 							</Button>
 						</span>
