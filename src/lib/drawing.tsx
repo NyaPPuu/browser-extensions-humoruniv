@@ -277,7 +277,7 @@ export default function Drawing() {
 	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const canvasContextRef = React.useRef<CanvasRenderingContext2D | null>(null);
 	const toolBoxRef = React.useRef<HTMLDivElement>(null);
-	const [timeline, setTimeline] = React.useState<number[]>([]);
+	const [timeline, setTimeline] = React.useState<string[]>([]);
 	// const [timeline, setTimeline] = React.useState<number>(5);
 
 	const [snackPack, setSnackPack] = React.useState<{ message?: string; type: AlertColor; open: boolean; }>({
@@ -362,7 +362,7 @@ export default function Drawing() {
 		return false;
 	};
 	const handleKeydown = (event: KeyboardEvent) => {
-		DEV.log("handleKeydown", event, document.querySelector(":focus")?.matches("input, textarea"));
+		DEV.log("handleKeydown", event, document.querySelector(":focus")?.matches("input, textarea"), document.querySelector(":focus"));
 		if (document.querySelector(":focus")?.matches("input, textarea")) return;
 		if (event.code == "Equal") { // +
 			setTool({ ...tool, size: { ...tool.size, [tool.id]: (tool.size[tool.id] || 1) + 1 } });
@@ -611,8 +611,8 @@ export default function Drawing() {
 		const intervalCount = Math.ceil(history.undo.length / (count * 1 + 1));
 		const tempTimeline = [];
 		for (let i = intervalCount; i < history.undo.length; i += intervalCount) {
-			tempTimeline.push(i);
-			// tempTimeline.push(history.undo[i]);
+			// tempTimeline.push(i);
+			tempTimeline.push(history.undo[i]);
 		}
 		// setTimeline(count);
 		setTimeline(tempTimeline);
@@ -628,10 +628,10 @@ export default function Drawing() {
 		*/
 		if (!timeline.length) return tempTimeline;
 		for (const i in timeline) {
-			tempTimeline.push(<Box key={i} border="1px solid grey"><img width={100} src={history.undo[timeline[i]]} /></Box>);
+			tempTimeline.push(<Box key={i} border="1px solid grey"><img src={timeline[i]} /></Box>);
 		}
 		return tempTimeline;
-	}, [history, timeline]);
+	}, [timeline]);
 
 	React.useEffect(() => {
 		if (canvasRef.current) {
@@ -689,7 +689,7 @@ export default function Drawing() {
 						onPointerDown={handlePointerDown}
 					></canvas>
 				</div>
-				<Stack direction="row" mt={1} spacing={0.5}>
+				<Stack direction="row" flexWrap="wrap" mt={1} spacing={0.5} sx={{ "& img": { width: 100, display: "block" } }}>
 					{/* {timeline.map((historyIdx) => {
 						return <Box key={historyIdx} border="1px solid grey"><img width={100} src={history.undo[historyIdx]} /></Box>;
 					})} */}
@@ -737,20 +737,21 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 
 	const [dialog, setDialog] = React.useState<{
 		open: string | null;
-		resize: {
-			width: number;
-			height: number;
-		};
+		resize_width: number;
+		resize_height: number;
+		timeline_count: number;
 	}>({
 		open: null,
-		resize: {
-			width: canvasRef.current?.width || 413,
-			height: canvasRef.current?.height || 257,
-		}
+		resize_width: canvasRef.current?.width || 413,
+		resize_height: canvasRef.current?.height || 257,
+		timeline_count: 5,
 	});
 
+	const handlePreventKeydown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+		event.stopPropagation();
+	};
 	const handleChangeDialog = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setDialog({ ...dialog, resize: { ...dialog.resize, [event.target.name]: event.target.value } });
+		setDialog({ ...dialog, [event.target.name]: event.target.value });
 	};
 	const handleCloseDialog = () => {
 		setDialog({ ...dialog, open: null });
@@ -760,7 +761,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 	};
 	const handleClickResize = () => {
 		if (!canvasRef.current) return;
-		setDialog({ ...dialog, open: "resize", resize: { width: canvasRef.current.width, height: canvasRef.current.height } });
+		setDialog({ ...dialog, open: "resize", resize_width: canvasRef.current.width, resize_height: canvasRef.current.height });
 	};
 	const handleClickUndo = () => {
 		loadHistory("undo");
@@ -797,8 +798,8 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 		handleCloseDialog();
 		if (!canvasRef.current || !canvasContextRef.current) return;
 		const tempCanvasImage= canvasRef.current.toDataURL();
-		canvasRef.current.width = dialog.resize.width;
-		canvasRef.current.height = dialog.resize.height;
+		canvasRef.current.width = dialog.resize_width;
+		canvasRef.current.height = dialog.resize_height;
 		canvasContextRef.current.fillStyle = "#FFF";
 		canvasContextRef.current.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 		const image = new Image();
@@ -807,8 +808,12 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 			canvasContextRef.current?.drawImage(image, 0, 0);
 		};
 	};
+	const setTimelineCount = () => {
+		handleCloseDialog();
+		makeTimeline(dialog.timeline_count);
+	};
 	const handleClickTimeline = () => {
-		makeTimeline(5);
+		setDialog({ ...dialog, open: "timeline" });
 	};
 
 	return (
@@ -958,9 +963,10 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 							label="가로"
 							type="number"
 							variant="standard"
-							name="width"
-							value={dialog.resize.width}
+							name="resize_width"
+							value={dialog.resize_width}
 							onChange={handleChangeDialog}
+							onKeyDown={handlePreventKeydown}
 						/>
 						<Typography mx={1}>×</Typography>
 						<TextField
@@ -968,14 +974,43 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 							label="세로"
 							type="number"
 							variant="standard"
-							name="height"
-							value={dialog.resize.height}
+							name="resize_height"
+							value={dialog.resize_height}
 							onChange={handleChangeDialog}
+							onKeyDown={handlePreventKeydown}
 						/>
 					</Stack>
 				</DialogContent>
 				<DialogActions>
 					<Button onClick={resizeCanvas} autoFocus>ㅇㅇ</Button>
+					<Button onClick={handleCloseDialog}>ㄴㄴ</Button>
+				</DialogActions>
+			</Dialog>
+			<Dialog
+				open={dialog.open == "timeline"}
+				onClose={handleCloseDialog}
+			>
+				<DialogTitle>
+					타임라인 생성
+				</DialogTitle>
+				<DialogContent>
+					<DialogContentText>
+				몇단계로 생성할까요?
+					</DialogContentText>
+					<Stack direction="row" alignItems="end">
+						<TextField
+							autoFocus
+							type="number"
+							variant="standard"
+							name="timeline_count"
+							value={dialog.timeline_count}
+							onChange={handleChangeDialog}
+							onKeyDown={handlePreventKeydown}
+						/>
+					</Stack>
+				</DialogContent>
+				<DialogActions>
+					<Button onClick={setTimelineCount} autoFocus>ㅇㅇ</Button>
 					<Button onClick={handleCloseDialog}>ㄴㄴ</Button>
 				</DialogActions>
 			</Dialog>
