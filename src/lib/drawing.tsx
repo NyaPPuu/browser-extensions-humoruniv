@@ -1,4 +1,4 @@
-import { Alert, Box, Button, ButtonGroup, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, Paper, Slider, Snackbar, Stack, styled, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography } from "@mui/material";
+import { Alert, AlertColor, Box, Button, ButtonGroup, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, Paper, Slider, Snackbar, Stack, styled, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography } from "@mui/material";
 import React, { useContext, VFC } from "react";
 import app, { DEV, matchRule } from "../lib/common";
 import Color from "color";
@@ -277,8 +277,8 @@ export default function Drawing() {
 	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const canvasContextRef = React.useRef<CanvasRenderingContext2D | null>(null);
 	const toolBoxRef = React.useRef<HTMLDivElement>(null);
-	// const [timeline, setTimeline] = React.useState<number[]>([]);
-	const [timeline, setTimeline] = React.useState<number>(5);
+	const [timeline, setTimeline] = React.useState<number[]>([]);
+	// const [timeline, setTimeline] = React.useState<number>(5);
 
 	const [snackPack, setSnackPack] = React.useState<{ message?: string; type: AlertColor; open: boolean; }>({
 		type: "success",
@@ -578,15 +578,23 @@ export default function Drawing() {
 		const tempTimeline = [];
 		for (let i = intervalCount; i < history.undo.length; i += intervalCount) {
 			tempTimeline.push(i);
+			// tempTimeline.push(history.undo[i]);
 		}
-		setTimeline(count);
+		// setTimeline(count);
+		setTimeline(tempTimeline);
 	};
 	const getTimeline = React.useMemo(() => {
 		const tempTimeline: React.ReactNode[] = [];
+		/*
 		if (!history.undo.length || !timeline) return tempTimeline;
 		const intervalCount = Math.ceil(history.undo.length / (timeline * 1 + 1));
 		for (let i = intervalCount; i < history.undo.length; i += intervalCount) {
 			tempTimeline.push(<Box key={i} border="1px solid grey"><img width={100} src={history.undo[i]} /></Box>);
+		}
+		*/
+		if (!timeline.length) return tempTimeline;
+		for (const i in timeline) {
+			tempTimeline.push(<Box key={i} border="1px solid grey"><img width={100} src={history.undo[timeline[i]]} /></Box>);
 		}
 		return tempTimeline;
 	}, [history, timeline]);
