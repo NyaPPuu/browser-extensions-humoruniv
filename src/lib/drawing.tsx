@@ -379,7 +379,41 @@ export default function Drawing() {
 			loadHistory("undo");
 		} else if (event.code == "KeyY" && event.ctrlKey) { // Ctrl Y
 			loadHistory("redo");
+		} else if (event.code == "KeyS" && event.ctrlKey) { // Ctrl S
+			event.preventDefault();
+			saveData();
+		} else if (event.code == "KeyB") { // B
+			setTool({ ...tool, id: "pencil" });
+		} else if (event.code == "KeyE") { // E
+			setTool({ ...tool, id: "eraser" });
+		} else if (event.code == "KeyG") { // G
+			setTool({ ...tool, id: "paint" });
+		} else if (event.code == "KeyI") { // I
+			setTool({ ...tool, id: "dropper" });
+		} else if (event.code == "KeyU") { // I
+			setTool({ ...tool, id: "line" });
+		} else if (event.code.startsWith("Digit")) { // number
+			const numberOfPalette = parseInt(event.code.replace("Digit", "")) - 1;
+			if (palette[numberOfPalette]) {
+				setTool({ ...tool, color: Color(palette[numberOfPalette]).hex() });
+			}
 		}
+		/*
+		B : 연필
+		E : 지우개
+		G : 페인트통
+		I : 스포이드
+		U : 선 그리기
+		Ctrl+Z, Ctrl+Y : 실행 취소, 재실행
+		Ctrl+S : 저장
+		1 ~ 9 : 파레트 색상 선택
+		T : 도구 상자를 현재 마우스 위치로 이동
+		+, - : 도구 크기 변경
+
+		왼클릭 : 도구 사용
+		오른클릭 : 지우개
+		파레트 색상에 대고 오른클릭 : 파레트 지우기
+		*/
 	};
 
 	const getStamp = (size: number, colorHEX: string) => {
