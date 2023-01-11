@@ -220,7 +220,13 @@ type PreviousTool = { id: string | null; position?: Position; imageData?: ImageD
 type History = { undo: string[]; redo: string[]; };
 type Position = { x: number; y: number; }
 
-export default function Drawing() {
+const IconPaint = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M19.228 18.732l1.768-1.768 1.767 1.768a2.5 2.5 0 1 1-3.535 0zM8.878 1.08l11.314 11.313a1 1 0 0 1 0 1.415l-8.485 8.485a1 1 0 0 1-1.414 0l-8.485-8.485a1 1 0 0 1 0-1.415l7.778-7.778-2.122-2.121L8.88 1.08zM11 6.03L3.929 13.1 11 20.173l7.071-7.071L11 6.029z"/></svg>;
+const IconDropper = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M6.457 18.957l8.564-8.564-1.414-1.414-8.564 8.564 1.414 1.414zm5.735-11.392l-1.414-1.414 1.414-1.414 1.768 1.767 2.829-2.828a1 1 0 0 1 1.414 0l2.121 2.121a1 1 0 0 1 0 1.414l-2.828 2.829 1.767 1.768-1.414 1.414-1.414-1.414L7.243 21H3v-4.243l9.192-9.192z"/></svg>;
+const IconLine = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 8v12h4V8H5zM3 7l4-5 4 5v15H3V7zm16 9v-2h-3v-2h3v-2h-2V8h2V6h-4v14h4v-2h-2v-2h2zM14 4h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>;
+
+// TODO: 커서 변경
+// TODO: chrome option 적용
+export default function Drawing({ onChange }: { onChange?: (dataURL: string) => void }) {
 
 	const stamp = React.useRef<{ [key: string]: HTMLCanvasElement; }>({});
 	const previousTool = React.useRef<PreviousTool>({
@@ -277,6 +283,7 @@ export default function Drawing() {
 	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const canvasContextRef = React.useRef<CanvasRenderingContext2D | null>(null);
 	const toolBoxRef = React.useRef<HTMLDivElement>(null);
+	const cursorRef = React.useRef<HTMLDivElement>(null);
 	const [timeline, setTimeline] = React.useState<string[]>([]);
 	// const [timeline, setTimeline] = React.useState<number>(5);
 
@@ -350,6 +357,10 @@ export default function Drawing() {
 		pointer.current.pageX = eventPosition.pageX;
 		pointer.current.pageY = eventPosition.pageY;
 		const { x, y } = getEventPosition(event);
+		if (cursorRef.current) {
+			cursorRef.current.style.top = y+"px";
+			cursorRef.current.style.left = x+"px";
+		}
 		if (pointer.current.isDown) {
 			doAction(tool.id, x, y, event.type);
 		}
@@ -538,6 +549,7 @@ export default function Drawing() {
 				DEV.log("Draw Line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y, size);
 			}
 		}
+		onChange && onChange(canvasRef.current.toDataURL());
 	};
 	const resetHistory = () => {
 		setHistory({
@@ -661,6 +673,24 @@ export default function Drawing() {
 		};
 	}, [tool.id, tool.size, tool.color, history, position]);
 
+	// const cursorStyle = React.useMemo(() => {
+	// 	return {
+	// 		width: 10,
+	// 		height: 10,
+	// 	};
+	// }, [tool.id, tool.size]);
+	const cursor = React.useMemo(() => {
+		if (tool.id == "pencil" || tool.id == "eraser") {
+			return <div style={{ borderRadius: "50%", borderWidth: 1, borderStyle: "solid", borderColor: "white", width: tool.size[tool.id] - 2, height: tool.size[tool.id] - 2, transform: "translate(-50%, -50%)" }}></div>;
+		} else if (tool.id == "paint") {
+			return <div style={{ borderTop: "3px solid white", borderLeft: "3px solid white", width:0, height: 0, padding: 3, }}>{IconPaint}</div>;
+		} else if (tool.id == "dropper") {
+			return <div style={{ borderTop: "3px solid white", borderLeft: "3px solid white", width:0, height: 0, padding: 3, }}>{IconDropper}</div>;
+		} else if (tool.id == "line") {
+			return <div style={{ borderTop: "3px solid white", borderLeft: "3px solid white", width:0, height: 0, padding: 3, }}>{IconLine}</div>;
+		}
+	}, [tool.id, tool.size]);
+
 	return (
 		<DndContext onDragEnd={handleDragEnd}>
 			<Box onContextMenu={handleContextmenu} position="relative">
@@ -679,15 +709,20 @@ export default function Drawing() {
 					style={{
 						position: "relative",
 						display: "inline-block",
+						cursor: "none",
+						overflow: "hidden",
 					}}
 				>
 					<canvas
 						ref={canvasRef}
-						style={{ border: "1px solid gray" }}
+						style={{ border: "1px solid gray", display: "block" }}
 						width={413}
 						height={257}
 						onPointerDown={handlePointerDown}
 					></canvas>
+					<div style={{ position: "absolute", mixBlendMode: "difference", pointerEvents: "none", fill: "white" }} ref={cursorRef}>
+						{cursor}
+					</div>
 				</div>
 				<Stack direction="row" flexWrap="wrap" mt={1} spacing={0.5} sx={{ "& img": { width: 100, display: "block" } }}>
 					{/* {timeline.map((historyIdx) => {
@@ -867,15 +902,9 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 					<TooltipToggleButton className="toolButton" value="eraser" TooltipProps={{ title: "지우개", "placement": "right" }}>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M8.586 8.858l-4.95 4.95 5.194 5.194H10V19h1.172l3.778-3.778-6.364-6.364zM10 7.444l6.364 6.364 2.828-2.829-6.364-6.364L10 7.444zM14 19h7v2h-9l-3.998.002-6.487-6.487a1 1 0 0 1 0-1.414L12.12 2.494a1 1 0 0 1 1.415 0l7.778 7.778a1 1 0 0 1 0 1.414L14 19z"/></svg>
 					</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="paint" TooltipProps={{ title: "페인트 통", "placement": "right" }}>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M19.228 18.732l1.768-1.768 1.767 1.768a2.5 2.5 0 1 1-3.535 0zM8.878 1.08l11.314 11.313a1 1 0 0 1 0 1.415l-8.485 8.485a1 1 0 0 1-1.414 0l-8.485-8.485a1 1 0 0 1 0-1.415l7.778-7.778-2.122-2.121L8.88 1.08zM11 6.03L3.929 13.1 11 20.173l7.071-7.071L11 6.029z"/></svg>
-					</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="dropper" TooltipProps={{ title: "스포이드", "placement": "right" }}>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M6.457 18.957l8.564-8.564-1.414-1.414-8.564 8.564 1.414 1.414zm5.735-11.392l-1.414-1.414 1.414-1.414 1.768 1.767 2.829-2.828a1 1 0 0 1 1.414 0l2.121 2.121a1 1 0 0 1 0 1.414l-2.828 2.829 1.767 1.768-1.414 1.414-1.414-1.414L7.243 21H3v-4.243l9.192-9.192z"/></svg>
-					</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="line" TooltipProps={{ title: "선 그리기", "placement": "right" }}>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 8v12h4V8H5zM3 7l4-5 4 5v15H3V7zm16 9v-2h-3v-2h3v-2h-2V8h2V6h-4v14h4v-2h-2v-2h2zM14 4h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>
-					</TooltipToggleButton>
+					<TooltipToggleButton className="toolButton" value="paint" TooltipProps={{ title: "페인트 통", "placement": "right" }}>{IconPaint}</TooltipToggleButton>
+					<TooltipToggleButton className="toolButton" value="dropper" TooltipProps={{ title: "스포이드", "placement": "right" }}>{IconDropper}</TooltipToggleButton>
+					<TooltipToggleButton className="toolButton" value="line" TooltipProps={{ title: "선 그리기", "placement": "right" }}>{IconLine}</TooltipToggleButton>
 				</ToggleButtonGroup>
 				<Divider />
 				<ColorPicker inputProps={{ sx: { p: 0, height: 40 } }} onBlur={handleChangeColor} value={tool.color} />
