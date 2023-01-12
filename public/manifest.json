@@ -15,7 +15,7 @@
 
 	"options_page": "options.html",
 
-	"permissions": ["storage"],
+	"permissions": ["storage", "unlimitedStorage"],
 
 	"content_scripts": [
 		{

@@ -588,7 +588,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 	};
 	const saveData = () => {
 		if (!canvasRef.current) return;
-		showSnackbar("저장 중...");
+		showSnackbar("저장 중...", "info");
 		const optionData = {
 			tool,
 			palette,
@@ -596,12 +596,17 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 			width: canvasRef.current.width,
 			height: canvasRef.current.height,
 		};
-		app.storage.local.set({ "write.picture": { "url": canvasRef.current.toDataURL(), "data": optionData } }, () => {
-			showSnackbar("저장 완료");
+		const dataURL = canvasRef.current.toDataURL();
+		app.storage.local.set({ "write.picture": { "url": dataURL, "data": optionData } }, () => {
+			// showSnackbar("저장 완료");
+			app.storage.local.get("write.picture", (items) => {
+				if (items["write.picture"].url == dataURL) showSnackbar("저장 완료");
+				else showSnackbar("저장 실패", "error");
+			});
 		});
 	};
 	const loadData = () => {
-		showSnackbar("불러오는 중...");
+		showSnackbar("불러오는 중...", "info");
 		app.storage.local.get("write.picture", (storageData: { [key: string]: any }) => {
 			if (!canvasRef.current || !storageData?.["write.picture"]) return;
 			const savedData = storageData["write.picture"];
