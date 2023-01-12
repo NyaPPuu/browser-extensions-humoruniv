@@ -8,11 +8,12 @@ import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
 interface OptionsForm {
 	[key: string]: unknown;
+	"write.picture.useOld": boolean;
 	"write.picture": boolean;
 	"write.picture.cursor": boolean;
 	"write.picture.cursorDot": boolean;
-	"write.picture.careful": boolean;
-	"write.picture.colpickImmed": boolean;
+	// "write.picture.careful": boolean;
+	// "write.picture.colpickImmed": boolean;
 	"write.picture.adjustx": number;
 	"write.picture.adjusty": number;
 }
@@ -41,11 +42,11 @@ function OptionHeading(props: { subject: React.ReactNode; }) {
 export default function App() {
 
 	const [form, setForm] = React.useState<OptionsForm>({
-		"write.picture": true,
+		"write.picture.useOld": false,
 		"write.picture.cursor": true,
 		"write.picture.cursorDot": true,
-		"write.picture.careful": false,
-		"write.picture.colpickImmed": false,
+		// "write.picture.careful": false,
+		// "write.picture.colpickImmed": false,
 		"write.picture.adjustx": 0,
 		"write.picture.adjusty": 0,
 	});
@@ -98,7 +99,7 @@ export default function App() {
 
 	const handleClickChat = function() {
 		window.open("http://web.humoruniv.com/memo/memo.html?you_hex=b8debfecb8debfec", "w_b8debfecb8debfec", "scrollbars=yes,toolbar=no,location=no,directories=no,menubar=no,status=no,width=520,height=720,resizable=yes");
-	}
+	};
 
 	return (
 		<>
@@ -122,18 +123,21 @@ export default function App() {
 			</Toolbar>
 			<Grid container spacing={2}>
 				<OptionHeading subject="그림낙서" />
+				<OptionRow subject="구버전 사용">
+					<Switch name="write.picture.useOld" checked={form["write.picture.useOld"] ? true : false} onChange={handleChange} />
+				</OptionRow>
 				<OptionRow subject="도구 모양 커서">
 					<Switch name="write.picture.cursor" checked={form["write.picture.cursor"] ? true : false} onChange={handleChange} />
 				</OptionRow>
 				<OptionRow subject="십자 커서 사용" description="도구 크기가 1px일때 십자 커서로 바뀝니다">
 					<Switch name="write.picture.cursorDot" checked={form["write.picture.cursorDot"] ? true : false} onChange={handleChange} />
 				</OptionRow>
-				<OptionRow subject="저장, 불러오기 확인창">
+				{/* <OptionRow subject="저장, 불러오기 확인창">
 					<Switch name="write.picture.careful" checked={form["write.picture.careful"] ? true : false} onChange={handleChange} />
-				</OptionRow>
-				<OptionRow subject="색상 즉시 적용">
+				</OptionRow> */}
+				{/* <OptionRow subject="색상 즉시 적용">
 					<Switch name="write.picture.colpickImmed" checked={form["write.picture.colpickImmed"] ? true : false} onChange={handleChange} />
-				</OptionRow>
+				</OptionRow> */}
 				<OptionRow subject="X 좌표 보정">
 					<TextField size="small" fullWidth type="number" name="write.picture.adjustx" value={form["write.picture.adjustx"]} onChange={handleChange} />
 				</OptionRow>

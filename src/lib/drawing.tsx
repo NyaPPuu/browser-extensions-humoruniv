@@ -1,6 +1,6 @@
 import { Alert, AlertColor, Box, Button, ButtonGroup, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, Paper, Slider, Snackbar, Stack, styled, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography } from "@mui/material";
 import React, { useContext, VFC } from "react";
-import app, { DEV, matchRule } from "../lib/common";
+import app, { DEV, matchRule } from "./common";
 import Color from "color";
 import { DndContext, DragEndEvent, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -8,6 +8,7 @@ import DragHandleIcon from "@mui/icons-material/DragHandle";
 import AddIcon from "@mui/icons-material/Add";
 import Grid from "@mui/material/Unstable_Grid2";
 import CloseIcon from "@mui/icons-material/Close";
+import { renderShadow } from "./renderer";
 
 /* 함수 */
 function distanceBetween(x1: number, y1: number, x2: number, y2: number) {
@@ -224,9 +225,18 @@ const IconPaint = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" wi
 const IconDropper = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M6.457 18.957l8.564-8.564-1.414-1.414-8.564 8.564 1.414 1.414zm5.735-11.392l-1.414-1.414 1.414-1.414 1.768 1.767 2.829-2.828a1 1 0 0 1 1.414 0l2.121 2.121a1 1 0 0 1 0 1.414l-2.828 2.829 1.767 1.768-1.414 1.414-1.414-1.414L7.243 21H3v-4.243l9.192-9.192z"/></svg>;
 const IconLine = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 8v12h4V8H5zM3 7l4-5 4 5v15H3V7zm16 9v-2h-3v-2h3v-2h-2V8h2V6h-4v14h4v-2h-2v-2h2zM14 4h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>;
 
-// TODO: 커서 변경
 // TODO: chrome option 적용
-export default function Drawing({ onChange }: { onChange?: (dataURL: string) => void }) {
+// TODO: input 작성시 단축키 작동 멈추게
+interface DrawingProps {
+	onChange?: (dataURL: string) => void;
+	options: {
+		toolCursor?: boolean;
+		crossCursor?: boolean;
+		adjustX?: number;
+		adjustY?: number;
+	}
+}
+export function Drawing(props: DrawingProps) {
 
 	const stamp = React.useRef<{ [key: string]: HTMLCanvasElement; }>({});
 	const previousTool = React.useRef<PreviousTool>({
@@ -297,6 +307,9 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 	const handleCloseSnackbar = function() {
 		setSnackPack({ ...snackPack, open: false });
 	};
+	const handleChange = () => {
+		if (canvasRef.current) props.onChange && props.onChange(canvasRef.current.toDataURL());
+	};
 
 	const handleDragEnd = (event: DragEndEvent) => {
 		// DEV.log("handleDragEnd", event);
@@ -312,20 +325,24 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 	};
 
 	const getEventPosition = (event: MouseEvent | TouchEvent) => {
+		const adjust = {
+			x: props.options.adjustX || 0,
+			y: props.options.adjustY || 0,
+		};
 		if (event.target === canvasRef.current && "offsetX" in event && "offsetY" in event) {
-			return { x: event.offsetX, y: event.offsetY };
+			return { x: event.offsetX + adjust.x, y: event.offsetY + adjust.y };
 		}
 		if ("pageX" in event && "pageY" in event && canvasRef.current) {
 			const targetBoundingClientRect = (canvasRef.current as HTMLElement).getBoundingClientRect();
-			return { x: event.pageX - targetBoundingClientRect.x - window.scrollX, y: event.pageY - targetBoundingClientRect.y - window.scrollY };
+			return { x: event.pageX - targetBoundingClientRect.x - window.scrollX + adjust.x, y: event.pageY - targetBoundingClientRect.y - window.scrollY + adjust.y };
 		}
 		if ("targetTouches" in event && "target" in event && event.target) {
 			const targetBoundingClientRect = (event.target as HTMLElement).getBoundingClientRect();
-			const x = event.targetTouches[0].clientX - targetBoundingClientRect.x;
-			const y = event.targetTouches[0].clientY - targetBoundingClientRect.y;
+			const x = event.targetTouches[0].clientX - targetBoundingClientRect.x + adjust.x;
+			const y = event.targetTouches[0].clientY - targetBoundingClientRect.y + adjust.y;
 			return { x, y };
 		}
-		return { x: 0, y: 0 };
+		return { x: 0 + adjust.x, y: 0 + adjust.y };
 	};
 
 	const handlePointerDown = (ReactEvent: React.MouseEvent | React.TouchEvent) => {
@@ -351,6 +368,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 			setTool({ ...tool, id: previousTool.current.id });
 			previousTool.current.id = null;
 		}
+		handleChange();
 	};
 	const handlePointerMove = (event: MouseEvent | TouchEvent) => {
 		const eventPosition = ("targetTouches" in event ? event.targetTouches[0] : event);
@@ -463,6 +481,8 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 	const doAction = (toolID: string, xPosition: number, yPosition: number, eventType?: string) => {
 		if (!canvasRef.current || !canvasContextRef.current) return;
 		// DEV.log("doAction", tool, xPosition, yPosition, eventType);
+		// xPosition += props.options.adjustX || 0;
+		// yPosition += props.options.adjustY || 0;
 
 		if (toolID == "pencil" || toolID == "eraser") {
 			if (eventType == "pointerdown") saveHistory();
@@ -549,7 +569,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 				DEV.log("Draw Line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y, size);
 			}
 		}
-		onChange && onChange(canvasRef.current.toDataURL());
+		// props.onChange && props.onChange(canvasRef.current.toDataURL());
 	};
 	const resetHistory = () => {
 		setHistory({
@@ -584,6 +604,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 		setTimeline([]);
 		image.onload = function() {
 			canvasContextRef.current?.drawImage(image, 0, 0);
+			handleChange();
 		};
 	};
 	const saveData = () => {
@@ -600,8 +621,10 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 		app.storage.local.set({ "write.picture": { "url": dataURL, "data": optionData } }, () => {
 			// showSnackbar("저장 완료");
 			app.storage.local.get("write.picture", (items) => {
-				if (items["write.picture"].url == dataURL) showSnackbar("저장 완료");
-				else showSnackbar("저장 실패", "error");
+				if (items["write.picture"].url == dataURL) {
+					showSnackbar("저장 완료");
+					handleChange();
+				} else showSnackbar("저장 실패", "error");
 			});
 		});
 	};
@@ -620,6 +643,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 			image.src = savedData.url;
 			image.onload = function() {
 				canvasContextRef.current?.drawImage(image, 0, 0);
+				handleChange();
 			};
 			showSnackbar("불러오기 완료");
 		});
@@ -658,6 +682,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 				ctx.fillStyle = "#FFF";
 				ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 				canvasContextRef.current = ctx;
+				handleChange();
 			}
 		}
 	}, []);
@@ -714,7 +739,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 					style={{
 						position: "relative",
 						display: "inline-block",
-						cursor: "none",
+						cursor: (props.options?.crossCursor && tool.size[tool.id] == 1) ? "crosshair" : (props.options?.toolCursor ? "none" : ""),
 						overflow: "hidden",
 					}}
 				>
@@ -725,10 +750,28 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 						height={257}
 						onPointerDown={handlePointerDown}
 					></canvas>
-					<div style={{ position: "absolute", mixBlendMode: "difference", pointerEvents: "none", fill: "white" }} ref={cursorRef}>
-						{cursor}
-					</div>
+					{props.options?.toolCursor && (
+						<div style={{ position: "absolute", mixBlendMode: "difference", pointerEvents: "none", fill: "white" }} ref={cursorRef}>
+							{cursor}
+						</div>
+					)}
 				</div>
+				<Paper>
+					<Typography variant="h6">B</Typography> <Typography>연필</Typography>
+					E : 지우개
+					G : 페인트통
+					I : 스포이드
+					U : 선 그리기
+					Ctrl+Z, Ctrl+Y : 실행 취소, 재실행
+					Ctrl+S : 저장
+					1 ~ 9 : 파레트 색상 선택
+					T : 도구 상자를 현재 마우스 위치로 이동
+					+, - : 도구 크기 변경
+
+					왼클릭 : 도구 사용
+					오른클릭 : 지우개
+					파레트 색상에 대고 오른클릭 : 파레트 지우기
+				</Paper>
 				<Stack direction="row" flexWrap="wrap" mt={1} spacing={0.5} sx={{ "& img": { width: 100, display: "block" } }}>
 					{/* {timeline.map((historyIdx) => {
 						return <Box key={historyIdx} border="1px solid grey"><img width={100} src={history.undo[historyIdx]} /></Box>;
@@ -736,7 +779,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 					{getTimeline}
 				</Stack>
 				<DrawingPalette palette={palette} setPalette={setPalette} tool={tool} setTool={setTool} position={position.palette} />
-				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} palette={palette} setPalette={setPalette} saveData={saveData} loadData={loadData} makeTimeline={makeTimeline} />
+				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} palette={palette} setPalette={setPalette} saveData={saveData} loadData={loadData} makeTimeline={makeTimeline} handleChange={handleChange} />
 			</Box>
 			<Snackbar
 				key={"alert"}
@@ -767,7 +810,7 @@ export default function Drawing({ onChange }: { onChange?: (dataURL: string) => 
 	);
 }
 
-const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, canvasContextRef, position, tool, setTool, history, loadHistory, resetHistory, palette, setPalette, saveData, loadData, makeTimeline }: { canvasRef: React.RefObject<HTMLCanvasElement>, canvasContextRef: React.MutableRefObject<CanvasRenderingContext2D | null>, position: Position, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, history: History, loadHistory: (type: "redo" | "undo") => void, resetHistory: () => void, palette: string[]; setPalette: React.Dispatch<React.SetStateAction<string[]>>, saveData: () => void, loadData: () => void, makeTimeline: (count: number) => void }, ref: React.ForwardedRef<HTMLDivElement>) {
+const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, canvasContextRef, position, tool, setTool, history, loadHistory, resetHistory, palette, setPalette, saveData, loadData, makeTimeline, handleChange }: { canvasRef: React.RefObject<HTMLCanvasElement>, canvasContextRef: React.MutableRefObject<CanvasRenderingContext2D | null>, position: Position, tool: Tool, setTool: React.Dispatch<React.SetStateAction<Tool>>, history: History, loadHistory: (type: "redo" | "undo") => void, resetHistory: () => void, palette: string[]; setPalette: React.Dispatch<React.SetStateAction<string[]>>; saveData: () => void, loadData: () => void; makeTimeline: (count: number) => void; handleChange: () => void; }, ref: React.ForwardedRef<HTMLDivElement>) {
 
 	const { attributes: toolBoxDragAttributes, listeners: toolBoxDragListeners, transform: toolBoxDragTransform, isDragging: toolBoxIsDragging } = useDraggable({
 		id: "toolBox"
@@ -832,6 +875,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 		if (!canvasRef.current || !canvasContextRef.current) return;
 		canvasContextRef.current.fillStyle = "#FFF";
 		canvasContextRef.current.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+		handleChange();
 		resetHistory();
 	};
 	const resizeCanvas = () => {
@@ -846,6 +890,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 		image.src = tempCanvasImage;
 		image.onload = function() {
 			canvasContextRef.current?.drawImage(image, 0, 0);
+			handleChange();
 		};
 	};
 	const setTimelineCount = () => {
@@ -1099,3 +1144,14 @@ const DrawingPalette = ({ palette, setPalette, tool, setTool, position }: { pale
 		</>
 	);
 };
+
+
+export default function initDrawing(props: DrawingProps = { options: {} }) {
+	const wrapper = document.createElement("humanager-drawing");
+	const container = wrapper.attachShadow({ mode: "open" });
+	const div = document.createElement("div");
+	renderShadow(div, <Drawing {...props} />);
+	container.append(div);
+	return wrapper;
+}
+

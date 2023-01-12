@@ -366,5 +366,11 @@ export function matchRule(str: string, rule: string): boolean {
 export function pathBaseName(path: string): string {
 	return path.split(/[\\/]/).pop() || path;
 }
+export function safeNumber(maybeNumber: any, defaultNumber: number) {
+	if (typeof maybeNumber === "number") return maybeNumber;
+	const toNumber = Number(maybeNumber);
+	if (!isNaN(toNumber)) return toNumber;
+	return defaultNumber;
+}
 
 
