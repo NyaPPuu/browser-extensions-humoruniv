@@ -16,7 +16,7 @@ class EntryPointHelper {
 
 	add(...pathString) {
 		if (Array.isArray(pathString)) {
-			pathString.map((p) => { this._add(p) });
+			pathString.map((p) => { this._add(p); });
 		} else {
 			this._add(pathString);
 		}

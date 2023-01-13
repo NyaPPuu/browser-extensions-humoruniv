@@ -3,19 +3,13 @@ import { CSS } from "@dnd-kit/utilities";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import DragHandleIcon from "@mui/icons-material/DragHandle";
-import { Alert, AlertColor, Box, Button, ButtonGroup, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, List, ListItem, ListItemText, Paper, Slider, Snackbar, Stack, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography, useTheme } from "@mui/material";
+import { Alert, AlertColor, Box, Button, ButtonGroup, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, List, ListItem, ListItemText, Paper, Slider, Snackbar, Stack, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography } from "@mui/material";
 import Color from "color";
 import React, { VFC } from "react";
 import app, { DEV } from "./common";
 import { renderShadow } from "./renderer";
 
 /* 함수 */
-function distanceBetween(x1: number, y1: number, x2: number, y2: number) {
-	return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-}
-function angleBetween(x1: number, y1: number, x2: number, y2: number) {
-	return Math.atan2(x2 - x1, y2 - y1);
-}
 function drawLine(x1: number, y1: number, x2: number, y2: number, drawFunction: (x: number, y: number) => void) {
 	let tmp;
 	const steep = Math.abs(y2-y1) > Math.abs(x2-x1);
@@ -114,21 +108,6 @@ function fillCircle(imageData: ImageData, color: { [key: string]: number; }) {
 				imageData.data[index + 3] = 255;
 			}
 		}
-	}
-}
-function aliasedCircle(ctx: CanvasRenderingContext2D, xc: number, yc: number, r: number) { // NOTE: for fill only!
-	let x = r, y = 0, cd = 0;
-
-	// middle line
-	ctx.rect(xc - x, yc, r<<1, 1);
-
-	while (x >= y) {
-		cd -= (--x) - (++y);
-		if (cd < 0) cd += x++;
-		ctx.rect(xc - y, yc - x, y<<1, 1); // upper 1/4
-		ctx.rect(xc - x, yc - y, x<<1, 1); // upper 2/4
-		ctx.rect(xc - x, yc + y, x<<1, 1); // lower 3/4
-		ctx.rect(xc - y, yc + x, y<<1, 1); // lower 4/4
 	}
 }
 const getPixelColorFromImageData = (imageData: ImageData, xPosition: number, yPosition: number, width: number): number[] => {
@@ -235,8 +214,6 @@ interface DrawingProps {
 	}
 }
 export function Drawing(props: DrawingProps) {
-
-	const theme = useTheme();
 	const stamp = React.useRef<{ [key: string]: HTMLCanvasElement; }>({});
 	const previousTool = React.useRef<PreviousTool>({
 		id: null
@@ -610,6 +587,7 @@ export function Drawing(props: DrawingProps) {
 	};
 	const loadData = () => {
 		showSnackbar("불러오는 중...", "info");
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		app.storage.local.get("write.picture", (storageData: { [key: string]: any }) => {
 			if (!canvasRef.current || !storageData?.["write.picture"]) return;
 			const savedData = storageData["write.picture"];

@@ -84371,7 +84371,6 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
   var IconLine = /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M5 8v12h4V8H5zM3 7l4-5 4 5v15H3V7zm16 9v-2h-3v-2h3v-2h-2V8h2V6h-4v14h4v-2h-2v-2h2zM14 4h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" }));
   function Drawing(props) {
     var _a, _b, _c;
-    const theme2 = useTheme();
     const stamp = import_react12.default.useRef({});
     const previousTool = import_react12.default.useRef({
       id: null
