@@ -8,8 +8,8 @@ import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
 interface OptionsForm {
 	[key: string]: unknown;
-	"write.picture.useOld": boolean;
-	"write.picture": boolean;
+	// "write.picture.useOld": boolean;
+	// "write.picture": boolean;
 	"write.picture.cursor": boolean;
 	"write.picture.cursorDot": boolean;
 	// "write.picture.careful": boolean;
@@ -42,7 +42,7 @@ function OptionHeading(props: { subject: React.ReactNode; }) {
 export default function App() {
 
 	const [form, setForm] = React.useState<OptionsForm>({
-		"write.picture.useOld": false,
+		// "write.picture.useOld": false,
 		"write.picture.cursor": true,
 		"write.picture.cursorDot": true,
 		// "write.picture.careful": false,
@@ -123,9 +123,9 @@ export default function App() {
 			</Toolbar>
 			<Grid container spacing={2}>
 				<OptionHeading subject="그림낙서" />
-				<OptionRow subject="구버전 사용">
+				{/* <OptionRow subject="구버전 사용">
 					<Switch name="write.picture.useOld" checked={form["write.picture.useOld"] ? true : false} onChange={handleChange} />
-				</OptionRow>
+				</OptionRow> */}
 				<OptionRow subject="도구 모양 커서">
 					<Switch name="write.picture.cursor" checked={form["write.picture.cursor"] ? true : false} onChange={handleChange} />
 				</OptionRow>

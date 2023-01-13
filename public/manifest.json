@@ -28,8 +28,7 @@
 			"run_at": "document_start",
 			"all_frames": false,
 			"matches": ["*://*.humoruniv.com/board/humor/write.html?table=picture"],
-			"js": ["dist/pages.js", "dist/plugins/jquery-3.3.1.min.js", "dist/plugins/kdrawing.js", "dist/routes/humoruniv_write.js"],
-			"css": ["dist/plugins/kdrawing.css"]
+			"js": ["dist/pages.js", "dist/routes/humoruniv_write.js"]
 		}
 	]
 }
