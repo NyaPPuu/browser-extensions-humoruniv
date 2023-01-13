@@ -1,13 +1,12 @@
-import { Alert, AlertColor, Box, Button, ButtonGroup, Checkbox, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, Paper, Slider, Snackbar, Stack, styled, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography } from "@mui/material";
-import React, { useContext, VFC } from "react";
-import app, { DEV, matchRule } from "./common";
-import Color from "color";
 import { DndContext, DragEndEvent, useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import DragHandleIcon from "@mui/icons-material/DragHandle";
 import AddIcon from "@mui/icons-material/Add";
-import Grid from "@mui/material/Unstable_Grid2";
 import CloseIcon from "@mui/icons-material/Close";
+import DragHandleIcon from "@mui/icons-material/DragHandle";
+import { Alert, AlertColor, Box, Button, ButtonGroup, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Divider, IconButton, Input, InputProps, List, ListItem, ListItemText, Paper, Slider, Snackbar, Stack, TextField, ToggleButton, ToggleButtonGroup, ToggleButtonProps, Tooltip, TooltipProps, Typography, useTheme } from "@mui/material";
+import Color from "color";
+import React, { VFC } from "react";
+import app, { DEV } from "./common";
 import { renderShadow } from "./renderer";
 
 /* 함수 */
@@ -225,7 +224,6 @@ const IconPaint = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" wi
 const IconDropper = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M6.457 18.957l8.564-8.564-1.414-1.414-8.564 8.564 1.414 1.414zm5.735-11.392l-1.414-1.414 1.414-1.414 1.768 1.767 2.829-2.828a1 1 0 0 1 1.414 0l2.121 2.121a1 1 0 0 1 0 1.414l-2.828 2.829 1.767 1.768-1.414 1.414-1.414-1.414L7.243 21H3v-4.243l9.192-9.192z"/></svg>;
 const IconLine = <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 8v12h4V8H5zM3 7l4-5 4 5v15H3V7zm16 9v-2h-3v-2h3v-2h-2V8h2V6h-4v14h4v-2h-2v-2h2zM14 4h6a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/></svg>;
 
-// TODO: chrome option 적용
 // TODO: input 작성시 단축키 작동 멈추게
 interface DrawingProps {
 	onChange?: (dataURL: string) => void;
@@ -238,6 +236,7 @@ interface DrawingProps {
 }
 export function Drawing(props: DrawingProps) {
 
+	const theme = useTheme();
 	const stamp = React.useRef<{ [key: string]: HTMLCanvasElement; }>({});
 	const previousTool = React.useRef<PreviousTool>({
 		id: null
@@ -290,6 +289,7 @@ export function Drawing(props: DrawingProps) {
 			y: 0,
 		},
 	});
+	const wrapperRef = React.useRef<HTMLDivElement>(null);
 	const canvasRef = React.useRef<HTMLCanvasElement>(null);
 	const canvasContextRef = React.useRef<CanvasRenderingContext2D | null>(null);
 	const toolBoxRef = React.useRef<HTMLDivElement>(null);
@@ -391,17 +391,16 @@ export function Drawing(props: DrawingProps) {
 		return false;
 	};
 	const handleKeydown = (event: KeyboardEvent) => {
-		DEV.log("handleKeydown", event, document.querySelector(":focus")?.matches("input, textarea"), document.querySelector(":focus"));
-		if (document.querySelector(":focus")?.matches("input, textarea")) return;
+		if ((event.composedPath()[0] as Element).matches("input, textarea")) return;
 		if (event.code == "Equal") { // +
 			setTool({ ...tool, size: { ...tool.size, [tool.id]: (tool.size[tool.id] || 1) + 1 } });
 		} else if (event.code == "Minus") { // -
 			if (tool.size[tool.id] > 1) setTool({ ...tool, size: { ...tool.size, [tool.id]: tool.size[tool.id] - 1 } });
 		} else if (event.code == "KeyT") { // t
-			if (pointer.current.pageX != null && pointer.current.pageY != null) {
+			if (wrapperRef.current && pointer.current.pageX != null && pointer.current.pageY != null) {
 				setPosition({
 					...position,
-					toolBox: { x: pointer.current.pageX - (toolBoxRef.current?.offsetWidth ? toolBoxRef.current?.offsetWidth / 2 : 0), y: pointer.current.pageY - (toolBoxRef.current?.offsetHeight ? toolBoxRef.current?.offsetHeight / 2 : 0) }
+					toolBox: { x: pointer.current.pageX - (toolBoxRef.current?.offsetWidth ? toolBoxRef.current?.offsetWidth / 2 : 0) - wrapperRef.current.offsetLeft, y: pointer.current.pageY - (toolBoxRef.current?.offsetHeight ? toolBoxRef.current?.offsetHeight / 2 : 0) - wrapperRef.current.offsetTop }
 				});
 			}
 		} else if (event.code == "KeyZ" && event.ctrlKey) { // Ctrl Z
@@ -447,7 +446,6 @@ export function Drawing(props: DrawingProps) {
 
 	const getStamp = (size: number, colorHEX: string) => {
 		const stampID = size+"_"+colorHEX;
-		// console.log("stamp", stampID);
 		if (!stamp.current[stampID]) stamp.current[stampID] = makeStamp(size, colorHEX);
 		return stamp.current[stampID];
 	};
@@ -464,25 +462,10 @@ export function Drawing(props: DrawingProps) {
 			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 			canvasContextRef.current!.drawImage(stamp, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
 		});
-		/*
-		const dist = distanceBetween(xPosition, yPosition, lastX, lastY);
-		const angle = angleBetween(xPosition, yPosition, lastX, lastY);
-		const path = [];
-		for (let i = 0; i < dist; i += 1) {
-			const x = xPosition + (Math.sin(angle) * i) - halfSize;
-			const y = yPosition + (Math.cos(angle) * i) - halfSize;
-			path.push([Math.round(x), Math.round(y)]);
-			canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
-		}
-		console.log(path);
-		*/
 	};
 
 	const doAction = (toolID: string, xPosition: number, yPosition: number, eventType?: string) => {
 		if (!canvasRef.current || !canvasContextRef.current) return;
-		// DEV.log("doAction", tool, xPosition, yPosition, eventType);
-		// xPosition += props.options.adjustX || 0;
-		// yPosition += props.options.adjustY || 0;
 
 		if (toolID == "pencil" || toolID == "eraser") {
 			if (eventType == "pointerdown") saveHistory();
@@ -500,11 +483,8 @@ export function Drawing(props: DrawingProps) {
 			xPosition = Math.round(xPosition);
 			yPosition = Math.round(yPosition);
 			const imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-			console.log("imageData", imageData);
 			const toolColor = Color(tool.color).rgb().array();
-			console.log("toolColor", toolColor);
 			const startColor = getPixelColorFromImageData(imageData, xPosition, yPosition, canvasRef.current.width);
-			console.log("getPixelColorFromImageData", getPixelColorFromImageData);
 			if (isSameColor(startColor, toolColor)) return;
 			const queue = [[xPosition, yPosition]];
 			while (queue.length) {
@@ -633,7 +613,6 @@ export function Drawing(props: DrawingProps) {
 		app.storage.local.get("write.picture", (storageData: { [key: string]: any }) => {
 			if (!canvasRef.current || !storageData?.["write.picture"]) return;
 			const savedData = storageData["write.picture"];
-			console.log("saved data", savedData);
 			setTool({ ...savedData.data.tool });
 			setPalette([ ...savedData.data.palette ]);
 			setHistory({ ...savedData.data.history });
@@ -723,7 +702,7 @@ export function Drawing(props: DrawingProps) {
 
 	return (
 		<DndContext onDragEnd={handleDragEnd}>
-			<Box onContextMenu={handleContextmenu} position="relative">
+			<Box onContextMenu={handleContextmenu} position="relative" ref={wrapperRef}>
 				<style scoped>
 					{`
 				a, abbr, acronym, address, applet, article, aside, audio, b, big, blockquote, body, canvas, caption, center, cite, code, dd, del, details, dfn, div, dl, dt, em, embed, fieldset, figcaption, figure, footer, form, h1, h2, h3, h4, h5, h6, header, hgroup, html, i, iframe, img, ins, kbd, label, legend, li, mark, menu, nav, object, ol, output, p, pre, q, ruby, s, samp, section, small, span, strike, strong, sub, summary, sup, table, tbody, td, tfoot, th, thead, time, tr, tt, u, ul, var, video {border:0;font-size:100%;font:inherit;margin:0;padding:0;vertical-align:baseline}
@@ -756,21 +735,25 @@ export function Drawing(props: DrawingProps) {
 						</div>
 					)}
 				</div>
-				<Paper>
-					<Typography variant="h6">B</Typography> <Typography>연필</Typography>
-					E : 지우개
-					G : 페인트통
-					I : 스포이드
-					U : 선 그리기
-					Ctrl+Z, Ctrl+Y : 실행 취소, 재실행
-					Ctrl+S : 저장
-					1 ~ 9 : 파레트 색상 선택
-					T : 도구 상자를 현재 마우스 위치로 이동
-					+, - : 도구 크기 변경
-
-					왼클릭 : 도구 사용
-					오른클릭 : 지우개
-					파레트 색상에 대고 오른클릭 : 파레트 지우기
+				<Paper component={List} dense sx={{ width: 360, "& .MuiListItemText-root": { display: "flex", gap: 2 }, "& .MuiListItemText-primary": { width: 180, textAlign: "right", } }}>
+					<ListItem>
+						<ListItemText primary="파레트 색상 선택" secondary="1 ~ 9" />
+					</ListItem>
+					<ListItem>
+						<ListItemText primary="도구 상자를 마우스로 이동" secondary="T" />
+					</ListItem>
+					<ListItem>
+						<ListItemText primary="도구 크기 변경" secondary="+ -" />
+					</ListItem>
+					<ListItem>
+						<ListItemText primary="도구 사용" secondary="왼클릭" />
+					</ListItem>
+					<ListItem>
+						<ListItemText primary="지우개" secondary="오른클릭" />
+					</ListItem>
+					<ListItem>
+						<ListItemText primary="파레트 지우기" secondary="파레트에 오른클릭" />
+					</ListItem>
 				</Paper>
 				<Stack direction="row" flexWrap="wrap" mt={1} spacing={0.5} sx={{ "& img": { width: 100, display: "block" } }}>
 					{/* {timeline.map((historyIdx) => {
@@ -861,7 +844,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 		setTool({ ...tool, size: { ...tool.size, [tool.id]: newValue as number } });
 	};
 	const handleChangeToolSize = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setTool({ ...tool, size: { ...tool.size, [tool.id]: parseInt(event.target.value) } });
+		setTool({ ...tool, size: { ...tool.size, [tool.id]: parseInt(event.target.value) || 1 } });
 	};
 	const handleChangeColor = (event: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
 		setTool({ ...tool, color: event.target.value });
@@ -922,14 +905,14 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 							</Button>
 						</span>
 					</Tooltip>
-					<Tooltip title="되돌리기" placement="right">
+					<Tooltip title="되돌리기 (Ctrl+Z)" placement="right">
 						<span>
 							<Button className="toolButton" onClick={handleClickUndo} disabled={history.undo.length == 0}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5.828 7l2.536 2.536L6.95 10.95 2 6l4.95-4.95 1.414 1.414L5.828 5H13a8 8 0 1 1 0 16H4v-2h9a6 6 0 1 0 0-12H5.828z"/></svg>
 							</Button>
 						</span>
 					</Tooltip>
-					<Tooltip title="재실행" placement="right">
+					<Tooltip title="재실행 (Ctrl+Y)" placement="right">
 						<span>
 							<Button className="toolButton" onClick={handleClickRedo} disabled={history.redo.length == 0}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M18.172 7H11a6 6 0 1 0 0 12h9v2h-9a8 8 0 1 1 0-16h7.172l-2.536-2.536L17.05 1.05 22 6l-4.95 4.95-1.414-1.414L18.172 7z"/></svg>
@@ -946,15 +929,15 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 					color="primary"
 					onChange={handleClickTool}
 				>
-					<TooltipToggleButton className="toolButton" value="pencil" TooltipProps={{ title: "연필", "placement": "right" }}>
+					<TooltipToggleButton className="toolButton" value="pencil" TooltipProps={{ title: "연필 (B)", "placement": "right" }}>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M15.728 9.686l-1.414-1.414L5 17.586V19h1.414l9.314-9.314zm1.414-1.414l1.414-1.414-1.414-1.414-1.414 1.414 1.414 1.414zM7.242 21H3v-4.243L16.435 3.322a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414L7.243 21z"/></svg>
 					</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="eraser" TooltipProps={{ title: "지우개", "placement": "right" }}>
+					<TooltipToggleButton className="toolButton" value="eraser" TooltipProps={{ title: "지우개 (E)", "placement": "right" }}>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M8.586 8.858l-4.95 4.95 5.194 5.194H10V19h1.172l3.778-3.778-6.364-6.364zM10 7.444l6.364 6.364 2.828-2.829-6.364-6.364L10 7.444zM14 19h7v2h-9l-3.998.002-6.487-6.487a1 1 0 0 1 0-1.414L12.12 2.494a1 1 0 0 1 1.415 0l7.778 7.778a1 1 0 0 1 0 1.414L14 19z"/></svg>
 					</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="paint" TooltipProps={{ title: "페인트 통", "placement": "right" }}>{IconPaint}</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="dropper" TooltipProps={{ title: "스포이드", "placement": "right" }}>{IconDropper}</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="line" TooltipProps={{ title: "선 그리기", "placement": "right" }}>{IconLine}</TooltipToggleButton>
+					<TooltipToggleButton className="toolButton" value="paint" TooltipProps={{ title: "페인트 통 (G)", "placement": "right" }}>{IconPaint}</TooltipToggleButton>
+					<TooltipToggleButton className="toolButton" value="dropper" TooltipProps={{ title: "스포이드 (I)", "placement": "right" }}>{IconDropper}</TooltipToggleButton>
+					<TooltipToggleButton className="toolButton" value="line" TooltipProps={{ title: "선 그리기 (U)", "placement": "right" }}>{IconLine}</TooltipToggleButton>
 				</ToggleButtonGroup>
 				<Divider />
 				<ColorPicker inputProps={{ sx: { p: 0, height: 40 } }} onBlur={handleChangeColor} value={tool.color} />
@@ -985,7 +968,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 				}
 				<Divider />
 				<ButtonGroup orientation="vertical" sx={{ border: 0 }}>
-					<Tooltip title="저장" placement="right">
+					<Tooltip title="저장 (Ctrl+S)" placement="right">
 						<span>
 							<Button className="toolButton" onClick={saveData}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M7 19v-6h10v6h2V7.828L16.172 5H5v14h2zM4 3h13l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm5 12v4h6v-4H9z"/></svg>
@@ -1102,16 +1085,6 @@ const DrawingPalette = ({ palette, setPalette, tool, setTool, position }: { pale
 	const { attributes: paletteDragAttributes, listeners: paletteDragListeners, transform: paletteDragTransform, isDragging: paletteIsDragging } = useDraggable({
 		id: "palette"
 	});
-	// const handleClickPalette = (event: React.MouseEvent) => {
-	// // const handleClickPalette = (colorIndex: number) => {
-	// 	const target = event.target as HTMLDivElement;
-	// 	// console.log(colorIndex);
-	// 	if (event.button == 2) {
-	// 		// delete
-	// 	} else if (target.dataset.index && palette[target.dataset.index]) {
-	// 		setTool({ ...tool, color: Color(palette[target.dataset.index]).hex() });
-	// 	}
-	// };
 
 	const handleClickPalette = (color: string) => {
 		setTool({ ...tool, color: Color(color).hex() });
@@ -1119,10 +1092,8 @@ const DrawingPalette = ({ palette, setPalette, tool, setTool, position }: { pale
 
 	const handleContextPalette = (index: number) => {
 		// setTool({ ...tool, color: Color(color).hex() });
-		console.log("우클릭");
 		const p = [...palette];
 		p.splice(index, 1);
-		console.log(p);
 		setPalette(p);
 	};
 
