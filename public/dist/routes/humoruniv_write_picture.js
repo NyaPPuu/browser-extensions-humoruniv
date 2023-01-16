@@ -84387,7 +84387,8 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       id: "pencil",
       color: "#000000",
       size: {
-        "pencil": 2,
+        "pencil": 1,
+        "brush": 2,
         "eraser": 5,
         "line": 1
       }
@@ -84560,7 +84561,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         stamp.current[stampID] = makeStamp(size, colorHEX);
       return stamp.current[stampID];
     };
-    const brush = (stamp2, xPosition, yPosition, size, lastX, lastY) => {
+    const pencil = (stamp2, xPosition, yPosition, size, lastX, lastY) => {
       if (!canvasContextRef.current)
         return;
       const halfSize = (size - size % 2) / 2;
@@ -84572,6 +84573,27 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       }
       drawLine(xPosition, yPosition, lastX, lastY, (x, y) => {
         canvasContextRef.current.drawImage(stamp2, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
+      });
+    };
+    const brush = (xPosition, yPosition, size, lastX, lastY) => {
+      if (!canvasContextRef.current)
+        return;
+      const halfSize = (size - size % 2) / 2;
+      canvasContextRef.current.fillStyle = (0, import_color.default)(tool.color).hex();
+      if (typeof lastX === "undefined" || typeof lastY === "undefined" || xPosition === lastX && yPosition === lastY) {
+        const x = xPosition - halfSize;
+        const y = yPosition - halfSize;
+        canvasContextRef.current.beginPath();
+        canvasContextRef.current.arc(Math.round(x), Math.round(y), size, 0, 2 * Math.PI);
+        canvasContextRef.current.fill();
+        return;
+      }
+      drawLine(xPosition, yPosition, lastX, lastY, (x, y) => {
+        if (!canvasContextRef.current)
+          return;
+        canvasContextRef.current.beginPath();
+        canvasContextRef.current.arc(Math.round(x - halfSize), Math.round(y - halfSize), size, 0, 2 * Math.PI);
+        canvasContextRef.current.fill();
       });
     };
     const doAction = (toolID, xPosition, yPosition, eventType) => {
@@ -84586,7 +84608,16 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         pointer.current.lastY = yPosition;
         const size = tool.size[toolID] || 1;
         const stamp2 = getStamp(size, toolID == "eraser" ? "#FFFFFF" : (0, import_color.default)(tool.color).hex());
-        brush(stamp2, xPosition, yPosition, size, lastX, lastY);
+        pencil(stamp2, xPosition, yPosition, size, lastX, lastY);
+      } else if (toolID == "brush") {
+        if (eventType == "pointerdown")
+          saveHistory();
+        const lastX = eventType != "pointerdown" && pointer.current.lastX != null ? pointer.current.lastX : xPosition;
+        const lastY = eventType != "pointerdown" && pointer.current.lastY != null ? pointer.current.lastY : yPosition;
+        pointer.current.lastX = xPosition;
+        pointer.current.lastY = yPosition;
+        const size = tool.size[toolID] || 1;
+        brush(xPosition, yPosition, size, lastX, lastY);
       } else if (toolID == "paint") {
         if (eventType != "pointerdown" && eventType != "pointermove")
           return;
@@ -84656,7 +84687,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
           canvasContextRef.current.putImageData(previousTool.current.imageData, 0, 0);
           const size = tool.size[toolID] || 1;
           const stamp2 = getStamp(size, (0, import_color.default)(tool.color).hex());
-          brush(stamp2, xPosition, yPosition, size, previousTool.current.position.x, previousTool.current.position.y);
+          pencil(stamp2, xPosition, yPosition, size, previousTool.current.position.x, previousTool.current.position.y);
           DEV.log("Draw Line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y, size);
         }
       }
@@ -84940,11 +84971,12 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         onChange: handleClickTool
       },
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "pencil", TooltipProps: { title: "\uC5F0\uD544 (B)", "placement": "right" } }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M15.728 9.686l-1.414-1.414L5 17.586V19h1.414l9.314-9.314zm1.414-1.414l1.414-1.414-1.414-1.414-1.414 1.414 1.414 1.414zM7.242 21H3v-4.243L16.435 3.322a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414L7.243 21z" }))),
+      /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "brush", TooltipProps: { title: "\uBD93", "placement": "right" } }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M16.536 15.95l2.12-2.122-3.181-3.182 3.535-3.535-2.12-2.121-3.536 3.535-3.182-3.182L8.05 7.464l8.486 8.486zM13.354 5.697l2.828-2.829a1 1 0 0 1 1.414 0l3.536 3.536a1 1 0 0 1 0 1.414l-2.829 2.828 2.475 2.475a1 1 0 0 1 0 1.415L13 22.314a1 1 0 0 1-1.414 0l-9.9-9.9a1 1 0 0 1 0-1.414l7.778-7.778a1 1 0 0 1 1.415 0l2.475 2.475z" }))),
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "eraser", TooltipProps: { title: "\uC9C0\uC6B0\uAC1C (E)", "placement": "right" } }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M8.586 8.858l-4.95 4.95 5.194 5.194H10V19h1.172l3.778-3.778-6.364-6.364zM10 7.444l6.364 6.364 2.828-2.829-6.364-6.364L10 7.444zM14 19h7v2h-9l-3.998.002-6.487-6.487a1 1 0 0 1 0-1.414L12.12 2.494a1 1 0 0 1 1.415 0l7.778 7.778a1 1 0 0 1 0 1.414L14 19z" }))),
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "paint", TooltipProps: { title: "\uD398\uC778\uD2B8 \uD1B5 (G)", "placement": "right" } }, IconPaint),
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "dropper", TooltipProps: { title: "\uC2A4\uD3EC\uC774\uB4DC (I)", "placement": "right" } }, IconDropper),
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "line", TooltipProps: { title: "\uC120 \uADF8\uB9AC\uAE30 (U)", "placement": "right" } }, IconLine)
-    ), /* @__PURE__ */ import_react12.default.createElement(Divider_default, null), /* @__PURE__ */ import_react12.default.createElement(ColorPicker, { inputProps: { sx: { p: 0, height: 40 } }, onBlur: handleChangeColor, value: tool.color }), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uD30C\uB808\uD2B8\uC5D0 \uCD94\uAC00", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement(IconButton_default, { onClick: handleAddPalette, sx: { width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1 } }, /* @__PURE__ */ import_react12.default.createElement(import_Add2.default, null))), (tool.id == "pencil" || tool.id == "eraser" || tool.id == "line") && /* @__PURE__ */ import_react12.default.createElement(import_react12.default.Fragment, null, /* @__PURE__ */ import_react12.default.createElement(
+    ), /* @__PURE__ */ import_react12.default.createElement(Divider_default, null), /* @__PURE__ */ import_react12.default.createElement(ColorPicker, { inputProps: { sx: { p: 0, height: 40 } }, onBlur: handleChangeColor, value: tool.color }), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uD30C\uB808\uD2B8\uC5D0 \uCD94\uAC00", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement(IconButton_default, { onClick: handleAddPalette, sx: { width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1 } }, /* @__PURE__ */ import_react12.default.createElement(import_Add2.default, null))), (tool.id == "pencil" || tool.id == "brush" || tool.id == "eraser" || tool.id == "line") && /* @__PURE__ */ import_react12.default.createElement(import_react12.default.Fragment, null, /* @__PURE__ */ import_react12.default.createElement(
       Slider_default,
       {
         sx: {
