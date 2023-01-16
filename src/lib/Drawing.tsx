@@ -982,8 +982,8 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 					<TooltipToggleButton className="toolButton" value="paint" TooltipProps={{ title: "페인트 통 (G)", "placement": "right" }}>{IconPaint}</TooltipToggleButton>
 					<TooltipToggleButton className="toolButton" value="dropper" TooltipProps={{ title: "스포이드 (I)", "placement": "right" }}>{IconDropper}</TooltipToggleButton>
 					<TooltipToggleButton className="toolButton" value="line" TooltipProps={{ title: "선 그리기 (U)", "placement": "right" }}>{IconLine}</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="blur" TooltipProps={{ title: "블러 도구 (N)", "placement": "right" }}>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5.636 6.636L12 .272l6.364 6.364a9 9 0 1 1-12.728 0z"/></svg>
+					<TooltipToggleButton className="toolButton" value="blur" TooltipProps={{ title: "흐림 도구 (N)", "placement": "right" }}>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 3.1L7.05 8.05a7 7 0 1 0 9.9 0L12 3.1zm0-2.828l6.364 6.364a9 9 0 1 1-12.728 0L12 .272z"/></svg>
 					</TooltipToggleButton>
 				</ToggleButtonGroup>
 				<Divider />

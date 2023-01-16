@@ -1,5 +1,4 @@
 import app, { DEV, safeNumber } from "../lib/common";
-import initDrawing from "../lib/Drawing";
 
 DEV.log("page", page);
 
