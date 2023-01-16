@@ -8,7 +8,6 @@ import Color from "color";
 import React, { VFC } from "react";
 import app, { DEV } from "./common";
 import { renderShadow } from "./renderer";
-import * as StackBlur from "stackblur-canvas";
 
 /* 함수 */
 function drawLine(x1: number, y1: number, drawFunction: (x: number, y: number) => void, x2?: number, y2?: number) {
