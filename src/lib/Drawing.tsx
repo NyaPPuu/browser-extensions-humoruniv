@@ -8,9 +8,14 @@ import Color from "color";
 import React, { VFC } from "react";
 import app, { DEV } from "./common";
 import { renderShadow } from "./renderer";
+import * as StackBlur from "stackblur-canvas";
 
 /* 함수 */
-function drawLine(x1: number, y1: number, x2: number, y2: number, drawFunction: (x: number, y: number) => void) {
+function drawLine(x1: number, y1: number, drawFunction: (x: number, y: number) => void, x2?: number, y2?: number) {
+	if ((typeof x2 === "undefined" || typeof y2 === "undefined") || x1 === x2 && y1 === y2) {
+		drawFunction(x1, y1);
+		return true;
+	}
 	let tmp;
 	const steep = Math.abs(y2-y1) > Math.abs(x2-x1);
 	if (steep) {
@@ -43,6 +48,7 @@ function drawLine(x1: number, y1: number, x2: number, y2: number, drawFunction: 
 			err+=dx;
 		}
 	}
+	return true;
 }
 function plotCircle(xm: number, ym: number, r: number, imageData: ImageData, size: number, color: { [key: string]: number; }) {
 	let x = -r;
@@ -194,8 +200,7 @@ const ColorPicker = React.memo(function ColorPicker({ value, ...props }: InputPr
 
 type ToolSize = { [key: string]: number; }
 type Tool = { id: string; color: string; size: ToolSize; }
-type PreviousTool = { id: string | null; position?: Position; imageData?: ImageData
-; }
+type PreviousTool = { id: string | null; position?: Position; imageData?: ImageData; canvas?: HTMLCanvasElement; }
 type History = { undo: string[]; redo: string[]; };
 type Position = { x: number; y: number; }
 
@@ -240,6 +245,7 @@ export function Drawing(props: DrawingProps) {
 			"pencil": 2,
 			"eraser": 5,
 			"line": 1,
+			"blur": 5,
 		}
 	});
 	const [history, setHistory] = React.useState<History>({
@@ -426,20 +432,6 @@ export function Drawing(props: DrawingProps) {
 		if (!stamp.current[stampID]) stamp.current[stampID] = makeStamp(size, colorHEX);
 		return stamp.current[stampID];
 	};
-	const brush = (stamp: HTMLCanvasElement, xPosition: number, yPosition: number, size: number, lastX?: number, lastY?: number) => {
-		if (!canvasContextRef.current) return;
-		const halfSize = (size - (size % 2)) / 2;
-		if ((typeof lastX === "undefined" || typeof lastY === "undefined") || xPosition === lastX && yPosition === lastY) {
-			const x = xPosition - halfSize;
-			const y = yPosition - halfSize;
-			canvasContextRef.current.drawImage(stamp, Math.round(x), Math.round(y), size, size);
-			return;
-		}
-		drawLine(xPosition, yPosition, lastX, lastY, (x, y) => {
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			canvasContextRef.current!.drawImage(stamp, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
-		});
-	};
 
 	const doAction = (toolID: string, xPosition: number, yPosition: number, eventType?: string) => {
 		if (!canvasRef.current || !canvasContextRef.current) return;
@@ -454,7 +446,12 @@ export function Drawing(props: DrawingProps) {
 
 			const size = tool.size[toolID] || 1;
 			const stamp = getStamp(size, toolID == "eraser" ? "#FFFFFF" : Color(tool.color).hex());
-			brush(stamp, xPosition, yPosition, size, lastX, lastY);
+			// brush(stamp, xPosition, yPosition, size, lastX, lastY);
+			const halfSize = (size - (size % 2)) / 2;
+			drawLine(xPosition, yPosition, (x, y) => {
+				// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+				canvasContextRef.current!.drawImage(stamp, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
+			}, lastX, lastY);
 		} else if (toolID == "paint") {
 			if (eventType != "pointerdown" && eventType != "pointermove") return;
 			xPosition = Math.round(xPosition);
@@ -522,8 +519,72 @@ export function Drawing(props: DrawingProps) {
 				canvasContextRef.current.putImageData(previousTool.current.imageData, 0, 0);
 				const size = tool.size[toolID] || 1;
 				const stamp = getStamp(size, Color(tool.color).hex());
-				brush(stamp, xPosition, yPosition, size, previousTool.current.position.x, previousTool.current.position.y);
+				const halfSize = (size - (size % 2)) / 2;
+				drawLine(xPosition, yPosition, (x, y) => {
+					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+					canvasContextRef.current!.drawImage(stamp, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
+				}, previousTool.current.position.x, previousTool.current.position.y);
 				DEV.log("Draw Line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y, size);
+			}
+		} else if (toolID == "blur") {
+			if (eventType != "pointerdown" && eventType != "pointermove") return;
+			if (eventType == "pointerdown") {
+				saveHistory();
+				previousTool.current.id = "blur";
+				previousTool.current.position = { x: xPosition, y: yPosition };
+				const canvas = document.createElement("canvas");
+				canvas.width = canvasRef.current.width;
+				canvas.height = canvasRef.current.height;
+				previousTool.current.canvas = canvas;
+				const context = canvas.getContext("2d");
+				if (!context) return;
+				context.putImageData(canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height), 0, 0);
+			}
+			if (previousTool.current.id == "blur" && previousTool.current.position && previousTool.current.canvas) {
+				const size = tool.size[toolID] || 1;
+				const halfSize = (size - (size % 2)) / 2;
+				const lastX = eventType != "pointerdown" && pointer.current.lastX != null ? pointer.current.lastX : xPosition;
+				const lastY = eventType != "pointerdown" && pointer.current.lastY != null ? pointer.current.lastY : yPosition;
+				pointer.current.lastX = xPosition;
+				pointer.current.lastY = yPosition;
+
+				const blurCanvas = document.createElement("canvas");
+				blurCanvas.width = canvasRef.current.width;
+				blurCanvas.height = canvasRef.current.height;
+
+				const blurContext = blurCanvas.getContext("2d");
+
+				if (!blurContext) return;
+
+				drawLine(xPosition, yPosition, (x, y) => {
+					if (!blurContext || !canvasContextRef.current) return;
+					blurContext.beginPath();
+					blurContext.arc(x - halfSize, y - halfSize, size, 0, Math.PI * 2);
+					blurContext.closePath();
+					blurContext.fill();
+				}, lastX, lastY);
+
+				blurContext.globalCompositeOperation = "source-in";
+				blurContext.filter = "blur(1px)";
+				blurContext.drawImage(previousTool.current.canvas, 0, 0);
+
+				console.log(blurCanvas.toDataURL());
+
+				// canvasContextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+				// canvasContextRef.current.globalCompositeOperation = "destination-over";
+				canvasContextRef.current.drawImage(blurCanvas, 0, 0);
+				// canvasContextRef.current.drawImage(imageCanvas, 0, 0);
+
+				// blurContext.globalCompositeOperation = "source-in";
+				// blurContext.filter = "blur(10px)";
+				// blurContext.drawImage(imageCanvas, 0, 0);
+
+				// // canvasContextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+				// canvasContextRef.current.drawImage(blurCanvas, 0, 0);
+				// canvasContextRef.current.globalCompositeOperation = "destination-over";
+				// canvasContextRef.current.drawImage(imageCanvas, 0, 0);
+
+				return;
 			}
 		}
 		// props.onChange && props.onChange(canvasRef.current.toDataURL());
@@ -632,6 +693,7 @@ export function Drawing(props: DrawingProps) {
 	}, [timeline]);
 
 	React.useEffect(() => {
+
 		if (canvasRef.current) {
 			const ctx = canvasRef.current.getContext("2d", { willReadFrequently: true });
 			if (ctx) {
@@ -667,7 +729,7 @@ export function Drawing(props: DrawingProps) {
 	// 	};
 	// }, [tool.id, tool.size]);
 	const cursor = React.useMemo(() => {
-		if (tool.id == "pencil" || tool.id == "eraser") {
+		if (tool.id == "pencil" || tool.id == "eraser" || tool.id == "blur") {
 			return <div style={{ borderRadius: "50%", borderWidth: 1, borderStyle: "solid", borderColor: "white", width: tool.size[tool.id] - 2, height: tool.size[tool.id] - 2, transform: "translate(-50%, -50%)" }}></div>;
 		} else if (tool.id == "paint") {
 			return <div style={{ borderTop: "3px solid white", borderLeft: "3px solid white", width:0, height: 0, padding: 3, }}>{IconPaint}</div>;
@@ -916,13 +978,16 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 					<TooltipToggleButton className="toolButton" value="paint" TooltipProps={{ title: "페인트 통 (G)", "placement": "right" }}>{IconPaint}</TooltipToggleButton>
 					<TooltipToggleButton className="toolButton" value="dropper" TooltipProps={{ title: "스포이드 (I)", "placement": "right" }}>{IconDropper}</TooltipToggleButton>
 					<TooltipToggleButton className="toolButton" value="line" TooltipProps={{ title: "선 그리기 (U)", "placement": "right" }}>{IconLine}</TooltipToggleButton>
+					<TooltipToggleButton className="toolButton" value="blur" TooltipProps={{ title: "블러 도구", "placement": "right" }}>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5.636 6.636L12 .272l6.364 6.364a9 9 0 1 1-12.728 0z"/></svg>
+					</TooltipToggleButton>
 				</ToggleButtonGroup>
 				<Divider />
 				<ColorPicker inputProps={{ sx: { p: 0, height: 40 } }} onBlur={handleChangeColor} value={tool.color} />
 				<Tooltip title="파레트에 추가" placement="right">
 					<IconButton onClick={handleAddPalette} sx={{ width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1, }}><AddIcon /></IconButton>
 				</Tooltip>
-				{(tool.id == "pencil" || tool.id == "eraser" || tool.id == "line") &&
+				{(tool.id == "pencil" || tool.id == "eraser" || tool.id == "line" || tool.id == "blur") &&
 					<React.Fragment>
 						<Slider
 							sx={{
@@ -936,12 +1001,12 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 								marginRight: "auto",
 							}}
 							orientation="vertical"
-							value={tool.size ? tool.size[tool.id] : 1}
+							value={tool.size && tool.size[tool.id] ? tool.size[tool.id] : 1}
 							min={1}
 							max={30}
 							onChange={handleSlideToolSize}
 						/>
-						<TextField type="number" value={tool.size ? tool.size[tool.id] : 1} onChange={handleChangeToolSize} size="small" sx={{ width: 40 }} inputProps={{ sx: { px: 0.3, py: 0.2, textAlign: "center" }, min: 1, max: 30 }} />
+						<TextField type="number" value={tool.size && tool.size[tool.id] ? tool.size[tool.id] : 1} onChange={handleChangeToolSize} size="small" sx={{ width: 40 }} inputProps={{ sx: { px: 0.3, py: 0.2, textAlign: "center" }, min: 1, max: 30 }} />
 					</React.Fragment>
 				}
 				<Divider />

@@ -84211,7 +84211,11 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
   }
 
   // src/lib/Drawing.tsx
-  function drawLine(x1, y1, x2, y2, drawFunction) {
+  function drawLine(x1, y1, drawFunction, x2, y2) {
+    if (typeof x2 === "undefined" || typeof y2 === "undefined" || x1 === x2 && y1 === y2) {
+      drawFunction(x1, y1);
+      return true;
+    }
     let tmp;
     const steep = Math.abs(y2 - y1) > Math.abs(x2 - x1);
     if (steep) {
@@ -84244,6 +84248,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         err += dx;
       }
     }
+    return true;
   }
   function plotCircle(xm, ym, r, imageData, size, color) {
     let x = -r;
@@ -84389,7 +84394,8 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       size: {
         "pencil": 2,
         "eraser": 5,
-        "line": 1
+        "line": 1,
+        "blur": 5
       }
     });
     const [history, setHistory] = import_react12.default.useState({
@@ -84560,20 +84566,6 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         stamp.current[stampID] = makeStamp(size, colorHEX);
       return stamp.current[stampID];
     };
-    const brush = (stamp2, xPosition, yPosition, size, lastX, lastY) => {
-      if (!canvasContextRef.current)
-        return;
-      const halfSize = (size - size % 2) / 2;
-      if (typeof lastX === "undefined" || typeof lastY === "undefined" || xPosition === lastX && yPosition === lastY) {
-        const x = xPosition - halfSize;
-        const y = yPosition - halfSize;
-        canvasContextRef.current.drawImage(stamp2, Math.round(x), Math.round(y), size, size);
-        return;
-      }
-      drawLine(xPosition, yPosition, lastX, lastY, (x, y) => {
-        canvasContextRef.current.drawImage(stamp2, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
-      });
-    };
     const doAction = (toolID, xPosition, yPosition, eventType) => {
       if (!canvasRef.current || !canvasContextRef.current)
         return;
@@ -84586,7 +84578,10 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         pointer.current.lastY = yPosition;
         const size = tool.size[toolID] || 1;
         const stamp2 = getStamp(size, toolID == "eraser" ? "#FFFFFF" : (0, import_color.default)(tool.color).hex());
-        brush(stamp2, xPosition, yPosition, size, lastX, lastY);
+        const halfSize = (size - size % 2) / 2;
+        drawLine(xPosition, yPosition, (x, y) => {
+          canvasContextRef.current.drawImage(stamp2, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
+        }, lastX, lastY);
       } else if (toolID == "paint") {
         if (eventType != "pointerdown" && eventType != "pointermove")
           return;
@@ -84656,8 +84651,55 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
           canvasContextRef.current.putImageData(previousTool.current.imageData, 0, 0);
           const size = tool.size[toolID] || 1;
           const stamp2 = getStamp(size, (0, import_color.default)(tool.color).hex());
-          brush(stamp2, xPosition, yPosition, size, previousTool.current.position.x, previousTool.current.position.y);
+          const halfSize = (size - size % 2) / 2;
+          drawLine(xPosition, yPosition, (x, y) => {
+            canvasContextRef.current.drawImage(stamp2, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
+          }, previousTool.current.position.x, previousTool.current.position.y);
           DEV.log("Draw Line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y, size);
+        }
+      } else if (toolID == "blur") {
+        if (eventType != "pointerdown" && eventType != "pointermove")
+          return;
+        if (eventType == "pointerdown") {
+          saveHistory();
+          previousTool.current.id = "blur";
+          previousTool.current.position = { x: xPosition, y: yPosition };
+          const canvas = document.createElement("canvas");
+          canvas.width = canvasRef.current.width;
+          canvas.height = canvasRef.current.height;
+          previousTool.current.canvas = canvas;
+          const context = canvas.getContext("2d");
+          if (!context)
+            return;
+          context.putImageData(canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height), 0, 0);
+        }
+        if (previousTool.current.id == "blur" && previousTool.current.position && previousTool.current.canvas) {
+          const size = tool.size[toolID] || 1;
+          const halfSize = (size - size % 2) / 2;
+          const lastX = eventType != "pointerdown" && pointer.current.lastX != null ? pointer.current.lastX : xPosition;
+          const lastY = eventType != "pointerdown" && pointer.current.lastY != null ? pointer.current.lastY : yPosition;
+          pointer.current.lastX = xPosition;
+          pointer.current.lastY = yPosition;
+          const blurCanvas = document.createElement("canvas");
+          blurCanvas.width = canvasRef.current.width;
+          blurCanvas.height = canvasRef.current.height;
+          const blurContext = blurCanvas.getContext("2d");
+          if (!blurContext)
+            return;
+          drawLine(xPosition, yPosition, (x, y) => {
+            if (!blurContext || !canvasContextRef.current)
+              return;
+            blurContext.beginPath();
+            blurContext.arc(x - halfSize, y - halfSize, size, 0, Math.PI * 2);
+            blurContext.closePath();
+            blurContext.fill();
+          }, lastX, lastY);
+          blurContext.globalCompositeOperation = "source-in";
+          blurContext.filter = "blur(1px)";
+          blurContext.drawImage(previousTool.current.canvas, 0, 0);
+          console.log(blurCanvas.toDataURL());
+          canvasContextRef.current.drawImage(blurCanvas, 0, 0);
+          return;
         }
       }
     };
@@ -84783,7 +84825,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       };
     }, [tool.id, tool.size, tool.color, history, position]);
     const cursor = import_react12.default.useMemo(() => {
-      if (tool.id == "pencil" || tool.id == "eraser") {
+      if (tool.id == "pencil" || tool.id == "eraser" || tool.id == "blur") {
         return /* @__PURE__ */ import_react12.default.createElement("div", { style: { borderRadius: "50%", borderWidth: 1, borderStyle: "solid", borderColor: "white", width: tool.size[tool.id] - 2, height: tool.size[tool.id] - 2, transform: "translate(-50%, -50%)" } });
       } else if (tool.id == "paint") {
         return /* @__PURE__ */ import_react12.default.createElement("div", { style: { borderTop: "3px solid white", borderLeft: "3px solid white", width: 0, height: 0, padding: 3 } }, IconPaint);
@@ -84943,8 +84985,9 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "eraser", TooltipProps: { title: "\uC9C0\uC6B0\uAC1C (E)", "placement": "right" } }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M8.586 8.858l-4.95 4.95 5.194 5.194H10V19h1.172l3.778-3.778-6.364-6.364zM10 7.444l6.364 6.364 2.828-2.829-6.364-6.364L10 7.444zM14 19h7v2h-9l-3.998.002-6.487-6.487a1 1 0 0 1 0-1.414L12.12 2.494a1 1 0 0 1 1.415 0l7.778 7.778a1 1 0 0 1 0 1.414L14 19z" }))),
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "paint", TooltipProps: { title: "\uD398\uC778\uD2B8 \uD1B5 (G)", "placement": "right" } }, IconPaint),
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "dropper", TooltipProps: { title: "\uC2A4\uD3EC\uC774\uB4DC (I)", "placement": "right" } }, IconDropper),
-      /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "line", TooltipProps: { title: "\uC120 \uADF8\uB9AC\uAE30 (U)", "placement": "right" } }, IconLine)
-    ), /* @__PURE__ */ import_react12.default.createElement(Divider_default, null), /* @__PURE__ */ import_react12.default.createElement(ColorPicker, { inputProps: { sx: { p: 0, height: 40 } }, onBlur: handleChangeColor, value: tool.color }), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uD30C\uB808\uD2B8\uC5D0 \uCD94\uAC00", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement(IconButton_default, { onClick: handleAddPalette, sx: { width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1 } }, /* @__PURE__ */ import_react12.default.createElement(import_Add2.default, null))), (tool.id == "pencil" || tool.id == "eraser" || tool.id == "line") && /* @__PURE__ */ import_react12.default.createElement(import_react12.default.Fragment, null, /* @__PURE__ */ import_react12.default.createElement(
+      /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "line", TooltipProps: { title: "\uC120 \uADF8\uB9AC\uAE30 (U)", "placement": "right" } }, IconLine),
+      /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "blur", TooltipProps: { title: "\uBE14\uB7EC \uB3C4\uAD6C", "placement": "right" } }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M5.636 6.636L12 .272l6.364 6.364a9 9 0 1 1-12.728 0z" })))
+    ), /* @__PURE__ */ import_react12.default.createElement(Divider_default, null), /* @__PURE__ */ import_react12.default.createElement(ColorPicker, { inputProps: { sx: { p: 0, height: 40 } }, onBlur: handleChangeColor, value: tool.color }), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uD30C\uB808\uD2B8\uC5D0 \uCD94\uAC00", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement(IconButton_default, { onClick: handleAddPalette, sx: { width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1 } }, /* @__PURE__ */ import_react12.default.createElement(import_Add2.default, null))), (tool.id == "pencil" || tool.id == "eraser" || tool.id == "line" || tool.id == "blur") && /* @__PURE__ */ import_react12.default.createElement(import_react12.default.Fragment, null, /* @__PURE__ */ import_react12.default.createElement(
       Slider_default,
       {
         sx: {
@@ -84958,12 +85001,12 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
           marginRight: "auto"
         },
         orientation: "vertical",
-        value: tool.size ? tool.size[tool.id] : 1,
+        value: tool.size && tool.size[tool.id] ? tool.size[tool.id] : 1,
         min: 1,
         max: 30,
         onChange: handleSlideToolSize
       }
-    ), /* @__PURE__ */ import_react12.default.createElement(TextField_default, { type: "number", value: tool.size ? tool.size[tool.id] : 1, onChange: handleChangeToolSize, size: "small", sx: { width: 40 }, inputProps: { sx: { px: 0.3, py: 0.2, textAlign: "center" }, min: 1, max: 30 } })), /* @__PURE__ */ import_react12.default.createElement(Divider_default, null), /* @__PURE__ */ import_react12.default.createElement(ButtonGroup_default, { orientation: "vertical", sx: { border: 0 } }, /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uC800\uC7A5 (Ctrl+S)", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement("span", null, /* @__PURE__ */ import_react12.default.createElement(Button_default, { className: "toolButton", onClick: saveData }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M7 19v-6h10v6h2V7.828L16.172 5H5v14h2zM4 3h13l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm5 12v4h6v-4H9z" }))))), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uBD88\uB7EC\uC624\uAE30", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement("span", null, /* @__PURE__ */ import_react12.default.createElement(Button_default, { className: "toolButton", onClick: loadData }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M3 21a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2H20a1 1 0 0 1 1 1v3h-2V7h-7.414l-2-2H4v11.998L5.5 11h17l-2.31 9.243a1 1 0 0 1-.97.757H3zm16.938-8H7.062l-1.5 6h12.876l1.5-6z" }))))), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uD0C0\uC784\uB77C\uC778 \uB9CC\uB4E4\uAE30", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement("span", null, /* @__PURE__ */ import_react12.default.createElement(Button_default, { className: "toolButton", onClick: handleClickTimeline }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M2 3.993A1 1 0 0 1 2.992 3h18.016c.548 0 .992.445.992.993v16.014a1 1 0 0 1-.992.993H2.992A.993.993 0 0 1 2 20.007V3.993zM8 5v14h8V5H8zM4 5v2h2V5H4zm14 0v2h2V5h-2zM4 9v2h2V9H4zm14 0v2h2V9h-2zM4 13v2h2v-2H4zm14 0v2h2v-2h-2zM4 17v2h2v-2H4zm14 0v2h2v-2h-2z" }))))))), /* @__PURE__ */ import_react12.default.createElement(
+    ), /* @__PURE__ */ import_react12.default.createElement(TextField_default, { type: "number", value: tool.size && tool.size[tool.id] ? tool.size[tool.id] : 1, onChange: handleChangeToolSize, size: "small", sx: { width: 40 }, inputProps: { sx: { px: 0.3, py: 0.2, textAlign: "center" }, min: 1, max: 30 } })), /* @__PURE__ */ import_react12.default.createElement(Divider_default, null), /* @__PURE__ */ import_react12.default.createElement(ButtonGroup_default, { orientation: "vertical", sx: { border: 0 } }, /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uC800\uC7A5 (Ctrl+S)", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement("span", null, /* @__PURE__ */ import_react12.default.createElement(Button_default, { className: "toolButton", onClick: saveData }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M7 19v-6h10v6h2V7.828L16.172 5H5v14h2zM4 3h13l4 4v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zm5 12v4h6v-4H9z" }))))), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uBD88\uB7EC\uC624\uAE30", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement("span", null, /* @__PURE__ */ import_react12.default.createElement(Button_default, { className: "toolButton", onClick: loadData }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M3 21a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.414l2 2H20a1 1 0 0 1 1 1v3h-2V7h-7.414l-2-2H4v11.998L5.5 11h17l-2.31 9.243a1 1 0 0 1-.97.757H3zm16.938-8H7.062l-1.5 6h12.876l1.5-6z" }))))), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uD0C0\uC784\uB77C\uC778 \uB9CC\uB4E4\uAE30", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement("span", null, /* @__PURE__ */ import_react12.default.createElement(Button_default, { className: "toolButton", onClick: handleClickTimeline }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M2 3.993A1 1 0 0 1 2.992 3h18.016c.548 0 .992.445.992.993v16.014a1 1 0 0 1-.992.993H2.992A.993.993 0 0 1 2 20.007V3.993zM8 5v14h8V5H8zM4 5v2h2V5H4zm14 0v2h2V5h-2zM4 9v2h2V9H4zm14 0v2h2V9h-2zM4 13v2h2v-2H4zm14 0v2h2v-2h-2zM4 17v2h2v-2H4zm14 0v2h2v-2h-2z" }))))))), /* @__PURE__ */ import_react12.default.createElement(
       Dialog_default,
       {
         open: dialog.open == "new",
