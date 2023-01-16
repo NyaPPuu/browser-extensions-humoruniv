@@ -571,8 +571,6 @@ export function Drawing(props: DrawingProps) {
 				blurContext.filter = "blur(1px)";
 				blurContext.drawImage(previousTool.current.canvas, 0, 0);
 
-				console.log(blurCanvas.toDataURL());
-
 				// canvasContextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 				// canvasContextRef.current.globalCompositeOperation = "destination-over";
 				canvasContextRef.current.drawImage(blurCanvas, 0, 0);

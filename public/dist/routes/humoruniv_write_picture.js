@@ -84699,7 +84699,6 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
           blurContext.globalCompositeOperation = "source-in";
           blurContext.filter = "blur(1px)";
           blurContext.drawImage(previousTool.current.canvas, 0, 0);
-          console.log(blurCanvas.toDataURL());
           canvasContextRef.current.drawImage(blurCanvas, 0, 0);
           return;
         }
