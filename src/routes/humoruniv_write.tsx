@@ -1,35 +1,22 @@
-import app, { safeNumber } from "../lib/common";
+import app, { DEV, safeNumber } from "../lib/common";
 import initDrawing from "../lib/Drawing";
 
-function getAllSiblings(elem: Element) {
-	const result = [];
-	let node: Element | null = elem.parentNode?.firstChild as Element;
+DEV.log("page", page);
 
-	while (node) {
-		if (node !== elem && node.nodeType === Node.ELEMENT_NODE)
-			result.push(node);
-		node = (node.nextElementSibling || node.nextSibling) as Element;
-	}
-	return result;
+if (page.searchParams.get("table") != "picture") {
+	DEV.log("일반 글쓰기 모드");
 }
 
-app.storage.sync.get(["write.picture.useOld", "write.picture.adjustx", "write.picture.adjusty", "write.picture.cursor", "write.picture.cursorDot", "write.picture.careful", "write.picture.colpickImmed"], function(options: { [key: string]: any }) {
-	sauron(["form[name='new1']", "input[name=upload1]"], () => {
-		const uploadInput = document.querySelector("input[name=upload1]") as HTMLInputElement;
-		if (uploadInput) {
-			getAllSiblings(uploadInput).map((element) => element.remove());
 
-			uploadInput.parentElement?.append(initDrawing({
-				options: {
-					toolCursor: options["write.picture.cursor"],
-					crossCursor: options["write.picture.cursorDot"],
-					adjustX: safeNumber(options["write.picture.adjustx"], 0),
-					adjustY: safeNumber(options["write.picture.adjusty"], 0),
-				},
-				onChange: (dataURL) => {
-					uploadInput.value = dataURL.split(",")[1];
-				}
-			}), uploadInput);
-		}
-	});
-});
+/*
+TODO
+- 이미지 자동 업로드 : 본문에 포함된 외부 이미지를 웃긴대학 서버에 업로드하고 교체해줍니다.
+- 랜덤짤 : 폴더 또는 파일을 선택하여 그 중 랜덤으로 뽑아서 본문에 첨부해줍니다.
+- 여러장 : 여러장의 이미지를 선택하여 한번에 업로드하는 기능입니다.
+- 임시저장 : 작성 중인 글을 예기치 않은 일로 인해 처음부터 다시 작성하지 않도록 임시로 저장해주는 기능입니다.
+- 고정짤 : 글을 작성할 때마다 최상단에 자동으로 이미지를 첨부해줍니다.
+
+- 그림낙서 : '그림낙서' 게시판에서 사용할 수 있는 그림판같은 툴입니다.
+
+- 원본이 삭제된 스크랩 삭제 : 원본 글이 삭제된 스크랩을 손쉽게 스크랩 목록에서 제거할 수 있게 도와줍니다.
+*/

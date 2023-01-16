@@ -28,6 +28,12 @@
 			"run_at": "document_start",
 			"all_frames": false,
 			"matches": ["*://*.humoruniv.com/board/humor/write.html?table=picture"],
+			"js": ["dist/pages.js", "dist/routes/humoruniv_write_picture.js"]
+		},
+		{
+			"run_at": "document_start",
+			"all_frames": false,
+			"matches": ["*://*.humoruniv.com/board/humor/write.html*"],
 			"js": ["dist/pages.js", "dist/routes/humoruniv_write.js"]
 		}
 	]
