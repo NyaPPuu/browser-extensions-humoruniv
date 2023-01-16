@@ -84553,6 +84553,8 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
         setTool({ ...tool, id: "dropper" });
       } else if (event.code == "KeyU") {
         setTool({ ...tool, id: "line" });
+      } else if (event.code == "KeyN") {
+        setTool({ ...tool, id: "blur" });
       } else if (event.code.startsWith("Digit")) {
         const numberOfPalette = parseInt(event.code.replace("Digit", "")) - 1;
         if (palette[numberOfPalette]) {
@@ -84690,7 +84692,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
             if (!blurContext || !canvasContextRef.current)
               return;
             blurContext.beginPath();
-            blurContext.arc(x - halfSize, y - halfSize, size, 0, Math.PI * 2);
+            blurContext.arc(x, y, halfSize, 0, Math.PI * 2);
             blurContext.closePath();
             blurContext.fill();
           }, lastX, lastY);
@@ -84986,7 +84988,7 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "paint", TooltipProps: { title: "\uD398\uC778\uD2B8 \uD1B5 (G)", "placement": "right" } }, IconPaint),
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "dropper", TooltipProps: { title: "\uC2A4\uD3EC\uC774\uB4DC (I)", "placement": "right" } }, IconDropper),
       /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "line", TooltipProps: { title: "\uC120 \uADF8\uB9AC\uAE30 (U)", "placement": "right" } }, IconLine),
-      /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "blur", TooltipProps: { title: "\uBE14\uB7EC \uB3C4\uAD6C", "placement": "right" } }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M5.636 6.636L12 .272l6.364 6.364a9 9 0 1 1-12.728 0z" })))
+      /* @__PURE__ */ import_react12.default.createElement(TooltipToggleButton, { className: "toolButton", value: "blur", TooltipProps: { title: "\uBE14\uB7EC \uB3C4\uAD6C (N)", "placement": "right" } }, /* @__PURE__ */ import_react12.default.createElement("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: "24", height: "24" }, /* @__PURE__ */ import_react12.default.createElement("path", { fill: "none", d: "M0 0h24v24H0z" }), /* @__PURE__ */ import_react12.default.createElement("path", { d: "M5.636 6.636L12 .272l6.364 6.364a9 9 0 1 1-12.728 0z" })))
     ), /* @__PURE__ */ import_react12.default.createElement(Divider_default, null), /* @__PURE__ */ import_react12.default.createElement(ColorPicker, { inputProps: { sx: { p: 0, height: 40 } }, onBlur: handleChangeColor, value: tool.color }), /* @__PURE__ */ import_react12.default.createElement(Tooltip_default, { title: "\uD30C\uB808\uD2B8\uC5D0 \uCD94\uAC00", placement: "right" }, /* @__PURE__ */ import_react12.default.createElement(IconButton_default, { onClick: handleAddPalette, sx: { width: 20, height: 20, minWidth: 20, minHeight: 20, margin: "0 auto", lineHeight: 1 } }, /* @__PURE__ */ import_react12.default.createElement(import_Add2.default, null))), (tool.id == "pencil" || tool.id == "eraser" || tool.id == "line" || tool.id == "blur") && /* @__PURE__ */ import_react12.default.createElement(import_react12.default.Fragment, null, /* @__PURE__ */ import_react12.default.createElement(
       Slider_default,
       {

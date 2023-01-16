@@ -401,8 +401,10 @@ export function Drawing(props: DrawingProps) {
 			setTool({ ...tool, id: "paint" });
 		} else if (event.code == "KeyI") { // I
 			setTool({ ...tool, id: "dropper" });
-		} else if (event.code == "KeyU") { // I
+		} else if (event.code == "KeyU") { // U
 			setTool({ ...tool, id: "line" });
+		} else if (event.code == "KeyN") { // N
+			setTool({ ...tool, id: "blur" });
 		} else if (event.code.startsWith("Digit")) { // number
 			const numberOfPalette = parseInt(event.code.replace("Digit", "")) - 1;
 			if (palette[numberOfPalette]) {
@@ -415,6 +417,7 @@ export function Drawing(props: DrawingProps) {
 		G : 페인트통
 		I : 스포이드
 		U : 선 그리기
+		N : 흐림 효과 도구
 		Ctrl+Z, Ctrl+Y : 실행 취소, 재실행
 		Ctrl+S : 저장
 		1 ~ 9 : 파레트 색상 선택
@@ -559,7 +562,7 @@ export function Drawing(props: DrawingProps) {
 				drawLine(xPosition, yPosition, (x, y) => {
 					if (!blurContext || !canvasContextRef.current) return;
 					blurContext.beginPath();
-					blurContext.arc(x - halfSize, y - halfSize, size, 0, Math.PI * 2);
+					blurContext.arc(x, y, halfSize, 0, Math.PI * 2);
 					blurContext.closePath();
 					blurContext.fill();
 				}, lastX, lastY);
@@ -978,7 +981,7 @@ const DrawingToolBox_ = React.forwardRef(function DrawingToolBox({ canvasRef, ca
 					<TooltipToggleButton className="toolButton" value="paint" TooltipProps={{ title: "페인트 통 (G)", "placement": "right" }}>{IconPaint}</TooltipToggleButton>
 					<TooltipToggleButton className="toolButton" value="dropper" TooltipProps={{ title: "스포이드 (I)", "placement": "right" }}>{IconDropper}</TooltipToggleButton>
 					<TooltipToggleButton className="toolButton" value="line" TooltipProps={{ title: "선 그리기 (U)", "placement": "right" }}>{IconLine}</TooltipToggleButton>
-					<TooltipToggleButton className="toolButton" value="blur" TooltipProps={{ title: "블러 도구", "placement": "right" }}>
+					<TooltipToggleButton className="toolButton" value="blur" TooltipProps={{ title: "블러 도구 (N)", "placement": "right" }}>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5.636 6.636L12 .272l6.364 6.364a9 9 0 1 1-12.728 0z"/></svg>
 					</TooltipToggleButton>
 				</ToggleButtonGroup>
