@@ -733,7 +733,8 @@ export function Drawing(props: DrawingProps) {
 	// }, [tool.id, tool.size]);
 	const cursor = React.useMemo(() => {
 		if (tool.id == "pencil" || tool.id == "eraser" || tool.id == "blur") {
-			return <div style={{ borderRadius: "50%", borderWidth: 1, borderStyle: "solid", borderColor: "white", width: tool.size[tool.id] - 2, height: tool.size[tool.id] - 2, transform: "translate(-50%, -50%)" }}></div>;
+			const size = tool.size[tool.id] ? tool.size[tool.id] - 2 : 1;
+			return <div style={{ borderRadius: "50%", borderWidth: 1, borderStyle: "solid", borderColor: "white", width: size, height: size, transform: "translate(-50%, -50%)" }}></div>;
 		} else if (tool.id == "paint") {
 			return <div style={{ borderTop: "3px solid white", borderLeft: "3px solid white", width:0, height: 0, padding: 3, }}>{IconPaint}</div>;
 		} else if (tool.id == "dropper") {

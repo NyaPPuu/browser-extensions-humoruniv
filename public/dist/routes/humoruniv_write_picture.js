@@ -84828,7 +84828,8 @@ See https://mui.com/r/migration-v4/#mui-material-styles for more details.` : (0,
     }, [tool.id, tool.size, tool.color, history, position]);
     const cursor = import_react12.default.useMemo(() => {
       if (tool.id == "pencil" || tool.id == "eraser" || tool.id == "blur") {
-        return /* @__PURE__ */ import_react12.default.createElement("div", { style: { borderRadius: "50%", borderWidth: 1, borderStyle: "solid", borderColor: "white", width: tool.size[tool.id] - 2, height: tool.size[tool.id] - 2, transform: "translate(-50%, -50%)" } });
+        const size = tool.size[tool.id] ? tool.size[tool.id] - 2 : 1;
+        return /* @__PURE__ */ import_react12.default.createElement("div", { style: { borderRadius: "50%", borderWidth: 1, borderStyle: "solid", borderColor: "white", width: size, height: size, transform: "translate(-50%, -50%)" } });
       } else if (tool.id == "paint") {
         return /* @__PURE__ */ import_react12.default.createElement("div", { style: { borderTop: "3px solid white", borderLeft: "3px solid white", width: 0, height: 0, padding: 3 } }, IconPaint);
       } else if (tool.id == "dropper") {
