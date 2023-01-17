@@ -5,7 +5,7 @@
 	"author": "메우메우",
 	"homepage_url": "http://web.humoruniv.com/",
 	"description": "웃긴대학을 편리하게 이용할 수 있게 도와줍니다!",
-	"version": "3.0.1",
+	"version": "3.1.0",
 	
 	"icons": {
 		"16": "img/icon16.png",
@@ -18,12 +18,6 @@
 	"permissions": ["storage", "unlimitedStorage"],
 
 	"content_scripts": [
-		{
-			"run_at": "document_start",
-			"all_frames": false,
-			"matches": ["<all_urls>"],
-			"js": ["dist/pages.js", "dist/routes/test.js"]
-		},
 		{
 			"run_at": "document_start",
 			"all_frames": false,
