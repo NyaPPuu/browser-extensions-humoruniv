@@ -511,22 +511,26 @@ export function Drawing(props: DrawingProps) {
 			setTool({ ...tool, color: Color(getColor).hex() });
 		} else if (toolID == "line") {
 			// if (eventType != "pointerdown" && eventType != "pointermove") return;
+			const size = tool.size[toolID] || 1;
+			const halfSize = (size - (size % 2)) / 2;
+			const xPositionInt = Math.round(xPosition - halfSize);
+			const yPositionInt = Math.round(yPosition - halfSize);
 			if (eventType == "pointerdown") {
 				saveHistory();
 				previousTool.current.id = "line";
-				previousTool.current.position = { x: xPosition, y: yPosition };
+				previousTool.current.position = { x: xPositionInt, y: yPositionInt };
+				// previousTool.current.position = { x: Math.round(xPosition - halfSize), y: Math.round(yPosition - halfSize) };
+				// previousTool.current.position = { x: xPosition, y: yPosition };
 				previousTool.current.imageData = canvasContextRef.current.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-				DEV.log("start line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y);
 			} else if (eventType == "pointermove" && previousTool.current.id == "line" && previousTool.current.position && previousTool.current.imageData) {
 				canvasContextRef.current.putImageData(previousTool.current.imageData, 0, 0);
-				const size = tool.size[toolID] || 1;
 				const stamp = getStamp(size, Color(tool.color).hex());
-				const halfSize = (size - (size % 2)) / 2;
-				drawLine(xPosition, yPosition, (x, y) => {
+				drawLine(xPositionInt, yPositionInt, (x, y) => {
 					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-					canvasContextRef.current!.drawImage(stamp, Math.round(x - halfSize), Math.round(y - halfSize), size, size);
+					// canvasContextRef.current!.drawImage(stamp, x, y, size, size);
+					canvasContextRef.current!.drawImage(stamp, x, y, size, size);
 				}, previousTool.current.position.x, previousTool.current.position.y);
-				DEV.log("Draw Line", xPosition, yPosition, previousTool.current.position.x, previousTool.current.position.y, size);
+				DEV.log("Draw", xPositionInt, yPositionInt, previousTool.current.position.x, previousTool.current.position.y, size);
 			}
 		} else if (toolID == "blur") {
 			if (eventType != "pointerdown" && eventType != "pointermove") return;
@@ -761,11 +765,12 @@ export function Drawing(props: DrawingProps) {
 						display: "inline-block",
 						cursor: (props.options?.crossCursor && tool.size[tool.id] == 1) ? "crosshair" : (props.options?.toolCursor ? "none" : ""),
 						overflow: "hidden",
+						border: "1px solid gray",
 					}}
 				>
 					<canvas
 						ref={canvasRef}
-						style={{ border: "1px solid gray", display: "block" }}
+						style={{ display: "block" }}
 						width={413}
 						height={257}
 						onPointerDown={handlePointerDown}
