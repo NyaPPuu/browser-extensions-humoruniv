@@ -770,7 +770,7 @@ export function Drawing(props: DrawingProps) {
 				>
 					<canvas
 						ref={canvasRef}
-						style={{ display: "block" }}
+						style={{ display: "block", touchAction: "none" }}
 						width={413}
 						height={257}
 						onPointerDown={handlePointerDown}
