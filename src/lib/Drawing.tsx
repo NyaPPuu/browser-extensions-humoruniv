@@ -801,15 +801,15 @@ export function Drawing(props: DrawingProps) {
 						<ListItemText primary="파레트 지우기" secondary="파레트에 오른클릭" />
 					</ListItem>
 				</Paper>
-				<Stack direction="row" flexWrap="wrap" mt={1} spacing={0.5} sx={{ "& img": { width: 100, display: "block" } }}>
-					{/* {timeline.map((historyIdx) => {
-						return <Box key={historyIdx} border="1px solid grey"><img width={100} src={history.undo[historyIdx]} /></Box>;
-					})} */}
-					{getTimeline}
-				</Stack>
 				<DrawingPalette palette={palette} setPalette={setPalette} tool={tool} setTool={setTool} position={position.palette} />
 				<DrawingToolBox ref={toolBoxRef} canvasRef={canvasRef} canvasContextRef={canvasContextRef} position={position.toolBox} tool={tool} setTool={setTool} history={history} loadHistory={loadHistory} resetHistory={resetHistory} palette={palette} setPalette={setPalette} saveData={saveData} loadData={loadData} makeTimeline={makeTimeline} handleChange={handleChange} />
 			</Box>
+			<Stack direction="row" flexWrap="wrap" mt={1} spacing={0.5} sx={{ "& img": { width: 100, display: "block" } }}>
+				{/* {timeline.map((historyIdx) => {
+					return <Box key={historyIdx} border="1px solid grey"><img width={100} src={history.undo[historyIdx]} /></Box>;
+				})} */}
+				{getTimeline}
+			</Stack>
 			<Snackbar
 				key={"alert"}
 				open={snackPack.open}
