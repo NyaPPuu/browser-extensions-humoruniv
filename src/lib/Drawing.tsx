@@ -1150,7 +1150,7 @@ const DrawingPalette = ({ palette, setPalette, tool, setTool, position }: { pale
 		<>
 			<Paper style={{ top: position?.y || 0, left: position?.x || 0, transform: CSS.Translate.toString(paletteDragTransform) }} elevation={3} sx={{ position: "absolute", display: "flex", minWidth: 56, border: (theme) => `1px solid ${theme.palette.divider}`, flexDirection: "column", "& .MuiButtonBase-root": { border: "1px solid gray", minWidth: 40, minHeight: 40, width: 40, height: 40, p: 0 }, "& .MuiButtonBase-root:hover": { border: 0 }, "& .MuiButtonBase-root.Mui-disabled": { opacity: 0.5, border: 0 } }}>
 				<Box alignSelf="center" textAlign="center" width="100%" {...paletteDragAttributes} {...paletteDragListeners} sx={{ cursor: paletteIsDragging ? "grabbing" : "grab" }}><DragHandleIcon /></Box>
-				<Stack p={1} gap={0.5} direction="row" flexWrap="wrap" sx={{ maxWidth: 348, "& .MuiBox-root": { width: 40, height: 40, flexBasis: 40, cursor: "pointer", border: (theme) => `1px solid ${theme.palette.divider}`, boxSizing: "border-box", } }}>
+				<Stack p={1} gap={0.5} direction="row" flexWrap="wrap" sx={{ width: 348, "& .MuiBox-root": { width: 40, height: 40, flexBasis: 40, cursor: "pointer", border: (theme) => `1px solid ${theme.palette.divider}`, boxSizing: "border-box", } }}>
 					{ palette.map((color, index) => {
 						return <Box key={index} bgcolor={color} onClick={handleClickPalette.bind(null, color)} onContextMenu={handleContextPalette.bind(null, index)}></Box>;
 					})}
