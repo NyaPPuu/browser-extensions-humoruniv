@@ -16,7 +16,7 @@ class EntryPointHelper {
 
 	add(...pathString) {
 		if (Array.isArray(pathString)) {
-			pathString.map((p) => { this._add(p); });
+			pathString.map((p) => { this._add(p) });
 		} else {
 			this._add(pathString);
 		}
@@ -38,53 +38,44 @@ class EntryPointHelper {
 	}
 }
 
-const entryInc = new EntryPointHelper(srcDir);
-entryInc.add("pages.ts", "plugins");
-esbuild
-	.build({
-		entryPoints: entryInc.list(),
-		bundle: false,
-		minify: process.env.NODE_ENV != "dev",
-		watch:
-			process.env.NODE_ENV == "dev"
-				? {
-					onRebuild(error, result) {
-						if (error) console.error("watch build failed:", error);
-						else console.log("watch build succeeded:", result);
-					}
-				}
-				: false,
-		target: ["chrome107", "firefox57"],
-		outbase: "./src",
-		outdir: "./public/dist",
-		define: {
-			"process.env.NODE_ENV": `"${process.env.NODE_ENV}"`
-		}
-	})
-	.catch(() => process.exit(1));
+const buildOptions = {
+	minify: process.env.NODE_ENV != "dev",
+	target: ["chrome107", "firefox57"],
+	outbase: "./src",
+	outdir: "./public/dist",
+	define: {
+		"process.env.NODE_ENV": `"${process.env.NODE_ENV}"`
+	},
+};
+if (process.env.NODE_ENV == "dev") {
+	buildOptions.plugins = [{
+		name: "watcher",
+		setup(build) {
+			build.onEnd(result => {
+				if (result.error?.length) console.error("watch build failed:", error);
+				else console.log("watch build succeeded");
+			});
+		},
+	}];
+}
 
-const entry = new EntryPointHelper(srcDir);
-entry.add("background.ts", "options.tsx", "popup.tsx", "routes");
-esbuild
-	.build({
-	// format: "cjs",
-		entryPoints: entry.list(),
-		bundle: true,
-		minify: process.env.NODE_ENV != "dev",
-		watch:
-			process.env.NODE_ENV == "dev"
-				? {
-					onRebuild(error, result) {
-						if (error) console.error("watch build failed:", error);
-						else console.log("watch build succeeded:", result);
-					}
-				}
-				: false,
-		target: ["chrome107", "firefox57"],
-		outbase: "./src",
-		outdir: "./public/dist",
-		define: {
-			"process.env.NODE_ENV": `"${process.env.NODE_ENV}"`
-		}
-	})
-	.catch(() => process.exit(1));
+(async() => {
+	const entryInc = new EntryPointHelper(srcDir);
+	entryInc.add("pages.ts", "plugins");
+	const normalBuild = await esbuild.context({ ...buildOptions, entryPoints: entryInc.list(), bundle: false, });
+
+	const entry = new EntryPointHelper(srcDir);
+	entry.add("background.ts", "options.tsx", "popup.tsx", "routes");
+	const bundleBuild = await esbuild.context({ ...buildOptions, entryPoints: entry.list(), bundle: true, });
+
+	if (process.env.NODE_ENV == "dev") {
+		await normalBuild.watch();
+		await bundleBuild.watch();
+	} else {
+		await normalBuild.rebuild();
+		await bundleBuild.rebuild();
+
+		normalBuild.dispose();
+		bundleBuild.dispose();
+	}
+})();

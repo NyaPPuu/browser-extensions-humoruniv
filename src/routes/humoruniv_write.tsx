@@ -6,7 +6,6 @@ if (page.searchParams.get("table") != "picture") {
 	DEV.log("일반 글쓰기 모드");
 }
 
-
 /*
 TODO
 - 이미지 자동 업로드 : 본문에 포함된 외부 이미지를 웃긴대학 서버에 업로드하고 교체해줍니다.
