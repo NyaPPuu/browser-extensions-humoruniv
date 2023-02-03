@@ -52,8 +52,9 @@ if (process.env.NODE_ENV == "dev") {
 		name: "watcher",
 		setup(build) {
 			build.onEnd(result => {
-				if (result.error?.length) console.error("watch build failed:", error);
-				else console.log("watch build succeeded");
+				if (result.errors?.length) console.error("%c✖ ERROR", "background-color: #ef5350; color: black; padding: 2px 4px;", result.errors);
+				if (result.warnings?.length) console.warn("%c‼ WARNING", "background-color: #ff9800; color: black; padding: 2px 4px;", result.warnings);
+				if (!result.errors?.length || !result.warnings?.length) console.log("%c✔ PASS", "background-color: #4caf50; color: black; padding: 2px 4px;", "watch build succeeded");
 			});
 		},
 	}];
