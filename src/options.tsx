@@ -1,12 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createTheme, TextField, ThemeProvider, CssBaseline, Container, Toolbar, Typography, Button, IconButton, Snackbar, Alert, AlertColor, Switch } from "@mui/material";
+import { createTheme, TextField, ThemeProvider, CssBaseline, Container, Toolbar, Typography, Button, IconButton, Snackbar, Alert, AlertColor, Switch, Box } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ChatIcon from "@mui/icons-material/Chat";
 import app from "./lib/common";
 import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
-interface OptionsForm {
+export interface OptionsType {
 	[key: string]: unknown;
 	// "write.picture.useOld": boolean;
 	// "write.picture": boolean;
@@ -17,6 +17,15 @@ interface OptionsForm {
 	"write.picture.adjustx": number;
 	"write.picture.adjusty": number;
 }
+export const defaultOptions: OptionsType = {
+	// "write.picture.useOld": false,
+	"write.picture.cursor": true,
+	"write.picture.cursorDot": true,
+	// "write.picture.careful": false,
+	// "write.picture.colpickImmed": false,
+	"write.picture.adjustx": 0,
+	"write.picture.adjusty": 0,
+};
 
 function OptionRow(props: React.PropsWithChildren<{ subject: React.ReactNode, description?: string }>) {
 	return (
@@ -41,15 +50,7 @@ function OptionHeading(props: { subject: React.ReactNode; }) {
 
 export default function App() {
 
-	const [form, setForm] = React.useState<OptionsForm>({
-		// "write.picture.useOld": false,
-		"write.picture.cursor": true,
-		"write.picture.cursorDot": true,
-		// "write.picture.careful": false,
-		// "write.picture.colpickImmed": false,
-		"write.picture.adjustx": 0,
-		"write.picture.adjusty": 0,
-	});
+	const [form, setForm] = React.useState<OptionsType>(defaultOptions);
 	const [snackPack, setSnackPack] = React.useState<{ message?: string; type: AlertColor; open: boolean; }>({
 		type: "success",
 		open: false
@@ -92,6 +93,7 @@ export default function App() {
 	};
 
 	React.useEffect(() => {
+		document.title = chrome.runtime.getManifest().name;
 		app.storage.sync.get(null, function(result) {
 			setForm({ ...form, ...result });
 		});
@@ -107,16 +109,15 @@ export default function App() {
 				<Button variant="outlined" startIcon={<ChatIcon />} onClick={handleClickChat}>
 					개발자에게 쪽지
 				</Button>
-				<Typography
-					component="h2"
-					variant="h5"
-					color="inherit"
-					align="center"
-					noWrap
-					sx={{ flex: 1 }}
-				>
-					Options
-				</Typography>
+				<Box sx={{ flex: 1, textAlign: "center", whiteSpace: "nowrap" }}>
+					<Typography
+						component="span"
+						variant="h5"
+						color="inherit"
+						mr={1}
+					>{chrome.runtime.getManifest().name}</Typography>
+					<Typography variant="caption">v{chrome.runtime.getManifest().version}</Typography>
+				</Box>
 				<Button variant="contained" size="small" onClick={handleClickSave}>
 					Save
 				</Button>
